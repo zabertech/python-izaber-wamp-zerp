@@ -14,7 +14,8 @@ setup(name='izaber_wamp_zerp',
       packages=['izaber_wamp_zerp'],
       scripts=[],
       install_requires=[
-          'izaber_wamp'
+          'izaber_wamp',
+          'autobahn_sync'
       ],
       zip_safe=False)
 
