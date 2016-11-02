@@ -2,8 +2,6 @@
 
 from setuptools import setup
 
-import izaber_wamp_zerp
-
 setup(name='izaber_wamp_zerp',
       version='1.00',
       description='Base load point for iZaber WAMP ZERP code',
