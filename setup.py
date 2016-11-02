@@ -13,7 +13,8 @@ setup(name='izaber_wamp_zerp',
       scripts=[],
       install_requires=[
           'izaber_wamp',
-          'autobahn_sync'
+          'autobahn_sync',
+          'service_identity',
       ],
       zip_safe=False)
 
