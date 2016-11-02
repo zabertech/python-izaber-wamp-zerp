@@ -2,6 +2,8 @@ from izaber import config, app_config
 from izaber.startup import request_initialize, initializer
 from izaber.wamp import wamp
 
+__version__ = '1.00'
+
 CONFIG_BASE = """
 default:
     wamp:

@@ -2,10 +2,10 @@
 
 from setuptools import setup
 
-import izaber
+import izaber_wamp_zerp
 
 setup(name='izaber_wamp_zerp',
-      version=izaber.__version__,
+      version='1.00',
       description='Base load point for iZaber WAMP ZERP code',
       url='',
       author='Aki Mimoto',
