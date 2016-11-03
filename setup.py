@@ -16,5 +16,8 @@ setup(name='izaber_wamp_zerp',
           'autobahn_sync',
           'service_identity',
       ],
+      dependency_links=[
+          'git+https://gitlab.izaber.com/systems/izaber-wamp.git#egg=izaber_wamp-1.0.0'
+      ],
       zip_safe=False)
 
