@@ -5,7 +5,7 @@ from izaber import config, app_config
 from izaber.startup import request_initialize, initializer
 from izaber.wamp import wamp
 
-__version__ = '2.00'
+__version__ = '2.01'
 
 CONFIG_BASE = """
 default:
@@ -14,6 +14,24 @@ default:
             database: 'databasename'
 """
 
+METHOD_SHORTHANDS = {
+    'schema':           'object.execute.fields_get',
+    'exec_workflow':    'object.exec_workflow',
+    'wizard_create':    'wizard.create',
+    'report':           'report.report',
+    'report_get':       'report.report_get',
+    'reports_fetch':    'report.report_get',
+    'search':           'object.execute.search',
+    'search_fetch':     'object.execute.zerp_search_read',
+    'search_fetch_one': 'object.execute.zerp_search_read_one',
+    'fetch':            'object.execute.read',
+    'fetch_one':        'object.execute.read',
+    'write':            'object.execute.write',
+    'create':           'object.execute.create',
+    'unlink':           'object.execute.unlink',
+}
+
+
 class ZERPModel(object):
     def __init__(self,zerp,model,schema):
         self.zerp_ = zerp
@@ -21,10 +39,18 @@ class ZERPModel(object):
         self.schema_ = schema
 
     def __getattr__(self,k):
-        return lambda *a,**kw: self.zerp_.call(
-            u':'.join([self.model_,'object.execute',k]),
-            *a, **kw
-        )
+        if k in METHOD_SHORTHANDS:
+            return lambda *a,**kw: self.zerp_.call(
+                u':'.join([self.model_,METHOD_SHORTHANDS[k]]),
+                *a, **kw
+            )
+
+
+        else:
+            return lambda *a,**kw: self.zerp_.call(
+                u':'.join([self.model_,'object.execute.'+k]),
+                *a, **kw
+            )
 
 class ZERP(object):
     def __init__(self,*args,**kwargs):
@@ -40,14 +66,7 @@ class ZERP(object):
             self.database = unicode(database)
 
     def schema(self,model):
-        if model in self.schema_cache:
-            return self.schema_cache[model]
-        schema = self.call(
-                    u':'.join([model,'model','schema'])
-                  )
-        self.schema_cache[model] = schema
-
-        return schema
+        return self.call(model+':object.execute.fields_get')
 
     def get_model(self,model):
         return ZERPModel(self,model,self.schema(model))

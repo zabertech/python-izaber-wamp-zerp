@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name='izaber_wamp_zerp',
-      version='2.00',
+      version='2.01',
       description='Base load point for iZaber WAMP ZERP code',
       url='',
       author='Aki Mimoto',
