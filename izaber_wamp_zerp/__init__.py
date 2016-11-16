@@ -1,8 +1,11 @@
+from pytz import timezone
+import pytz.reference
+
 from izaber import config, app_config
 from izaber.startup import request_initialize, initializer
 from izaber.wamp import wamp
 
-__version__ = '1.00'
+__version__ = '2.00'
 
 CONFIG_BASE = """
 default:
@@ -12,20 +15,21 @@ default:
 """
 
 class ZERPModel(object):
-    def __init__(self,zerp,model):
+    def __init__(self,zerp,model,schema):
         self.zerp_ = zerp
         self.model_ = model
+        self.schema_ = schema
 
     def __getattr__(self,k):
         return lambda *a,**kw: self.zerp_.call(
-            'object.execute',
-            self.model_,
-            k, *a, **kw
+            u':'.join([self.model_,'object.execute',k]),
+            *a, **kw
         )
 
 class ZERP(object):
     def __init__(self,*args,**kwargs):
         self.configure(*args,**kwargs)
+        self.schema_cache = {}
 
     def configure(self,
                     wamp=None,
@@ -35,14 +39,24 @@ class ZERP(object):
         if not database is None:
             self.database = unicode(database)
 
+    def schema(self,model):
+        if model in self.schema_cache:
+            return self.schema_cache[model]
+        schema = self.call(
+                    u':'.join([model,'model','schema'])
+                  )
+        self.schema_cache[model] = schema
+
+        return schema
+
     def get_model(self,model):
-        return ZERPModel(self,model)
+        return ZERPModel(self,model,self.schema(model))
 
     # Alias
     get = get_model
 
     def call(self,uri,*args,**kwargs):
-        uri = u'.'.join(['zerp',self.database,uri])
+        uri = u':'.join(['zerp',self.database,uri])
         return self.wamp.call(uri,*args,**kwargs)
 
 zerp = ZERP()
