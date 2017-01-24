@@ -1,3 +1,6 @@
+import time
+import base64
+
 from pytz import timezone
 import pytz.reference
 
@@ -5,7 +8,7 @@ from izaber import config, app_config
 from izaber.startup import request_initialize, initializer
 from izaber.wamp import wamp
 
-__version__ = '2.01'
+__version__ = '2.02'
 
 CONFIG_BASE = """
 default:
@@ -37,6 +40,42 @@ class ZERPModel(object):
         self.zerp_ = zerp
         self.model_ = model
         self.schema_ = schema
+
+    def reports_fetch(self, ids, context=None ):
+        """ Request a report be generated then fetch it!
+            The return value should be the decoded data file
+        """
+        if context is None: context = {}
+
+        generated_report_id = self.report(ids,context)
+
+        # The report must be created.
+        # Make sure we can generate the report
+        reports = []
+        for i in range(50):
+            time.sleep(0.1)
+
+            report = self.zerp_.report_get(generated_report_id)
+
+            if report['state']:
+                # Normalize the result (take the result string out of
+                # base64 encoding)
+                report['result'] = base64.decodestring(report['result'])
+
+                # Add it to the list of reports found.
+                reports.append(report)
+                break
+
+        # Couldn't get it!
+        else:
+            raise Exception("Couldn't get report!")
+
+        return reports
+
+    def report_fetch_one(self, report_id, context=None ):
+        reports = self.reports_fetch([report_id],context)
+        return reports[0]
+
 
     def __getattr__(self,k):
         if k in METHOD_SHORTHANDS:
@@ -77,6 +116,9 @@ class ZERP(object):
     def call(self,uri,*args,**kwargs):
         uri = u':'.join(['zerp',self.database,uri])
         return self.wamp.call(uri,*args,**kwargs)
+
+    def report_get(self,report_id):
+        return self.call('report.report_get',report_id)
 
 zerp = ZERP()
 
