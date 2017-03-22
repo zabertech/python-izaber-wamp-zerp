@@ -15,7 +15,7 @@ setup(name='izaber_wamp_zerp',
           'izaber_wamp',
       ],
       dependency_links=[
-          'git+https://gitlab.izaber.com/systems/izaber-wamp.git#egg=izaber_wamp-1.0.0'
+          'git+https://gitlab.izaber.com/systems/izaber-wamp.git#egg=izaber_wamp-1.11'
       ],
       zip_safe=False)
 
