@@ -26,4 +26,5 @@ Fire up a command line console
 * Type "cmd" 
 * Launch "Command Prompt"
 * From the command prompt, run
+* 
 	 \\\\sys-zerp-tools.izaber.com\client\izaber-python-install\Twisted-17.1.0-cp27-cp27m-win32.whl
