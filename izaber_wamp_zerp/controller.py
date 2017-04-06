@@ -1,3 +1,5 @@
+from izaber.compat import *
+
 METHOD_SHORTHANDS = {
     'schema':           'object.execute.fields_get',
     'exec_workflow':    'object.exec_workflow',

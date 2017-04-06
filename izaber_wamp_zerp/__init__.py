@@ -4,7 +4,7 @@ import base64
 from pytz import timezone
 import pytz.reference
 
-from controller import ZERP
+from izaber.wamp.zerp.controller import ZERP
 
 from izaber import config, app_config
 from izaber.startup import request_initialize, initializer
