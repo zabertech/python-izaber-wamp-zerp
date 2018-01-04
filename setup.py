@@ -12,6 +12,7 @@ setup(name='izaber_wamp_zerp',
       packages=['izaber_wamp_zerp'],
       scripts=[],
       install_requires=[
+          'pytz',
           'izaber_wamp',
       ],
       dependency_links=[
