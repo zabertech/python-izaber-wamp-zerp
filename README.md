@@ -5,7 +5,7 @@ connectivity within Zaber
 
 ## Documentation
 
-API documentation, usage and examples can be found in the "docs" directory.
+API documentation and usage information can be found in the "docs" directory.
 
 ## Installation
 
