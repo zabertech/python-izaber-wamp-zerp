@@ -1,6 +1,5 @@
 # izaber.wamp.zerp
 
-
 Base module that brings together most of the requirements to allow ZERP WAMP
 connectivity within Zaber
 
@@ -10,21 +9,8 @@ API documentation, usage and examples can be found in the "docs" directory.
 
 ## Installation
 
-### On Linux
-Install by using:
+Install the module for your local version of python using the command below. If you have both python 2 and 3 installed then you might need to replace the `python` keyword with `python2`, `py -2`, `python3`, or `py -3` based on the python version you want to use the module for.
 
-sudo apt-get install libffi apt-get install libssl-dev
-pip install --process-dependency-links git+https://gitlab.izaber.com/systems/izaber-wamp-zerp.git
-
-### On Windows
-
-This assumes PythonXY or some Python 2.7 variant has been installed.
-
-Fire up a command line console
-
-* Hit windows
-* Type "cmd" 
-* Launch "Command Prompt"
-* From the command prompt, run
-
-	 \\\\sys-zerp-tools.izaber.com\client\izaber-python-install\install-windows.bat
+```
+python -m pip install izaber-wamp-zerp
+```
