@@ -2,17 +2,22 @@
 Usage:
     wampcli
         [-e=<val> | --environment=<val>]
+        [-d | --debug]
     wampcli call <command>
         [-e=<val> | --environment=<val>]
+        [-d | --debug]
     wampcli pub <command>
         [-e=<val> | --environment=<val>]
+        [-d | --debug]
     wampcli sub <command>
         [-e=<val> | --environment=<val>]
+        [-d | --debug]
 
 Options:
     -e=<val>, --environment=<val>
                     The environment (defined in the ~/izaber.yaml) to use for
                     process. [default: ]
+    -d, --debug     Print out debug information for the wamp operations
 
 Config File:
     In order to communicate with Zerp, copy the following 
@@ -121,8 +126,21 @@ class replPrompt(Cmd):
         wamp.wamp.uri_base = ''
 
         try:
-            uri = self.get_full_zerp_uri(uri_base_bkp, uri)
-            return wamp.wamp.call(uri, *args, **kwargs)
+            full_uri = self.get_full_zerp_uri(uri_base_bkp, uri)
+
+            if global_args['--debug']:
+                print('operation: call')
+                print('input URI:', uri)
+                print('full URI used:', full_uri)
+                print('args:', args)
+                print('kwargs:', kwargs)
+
+            result = wamp.wamp.call(full_uri, *args, **kwargs)
+
+            if global_args['--debug']:
+                print('result:', result)
+
+            return result
         finally:
             # Reset the uri_base no matter what happens
             wamp.wamp.uri_base = uri_base_bkp
@@ -132,7 +150,16 @@ class replPrompt(Cmd):
         wamp.wamp.uri_base = ''
 
         try:
-            pub_metadata = wamp.wamp.publish(uri, *args, **kwargs)
+            full_uri = self.get_full_zerp_uri(uri_base_bkp, uri)
+
+            if global_args['--debug']:
+                print('operation: publish')
+                print('input URI:', uri)
+                print('full URI used:', full_uri)
+                print('args:', args)
+                print('kwargs:', kwargs)
+
+            pub_metadata = wamp.wamp.publish(full_uri, *args, **kwargs)
 
             if not pub_metadata:
                 raise Exception("publish call returned '{}'".format(
@@ -142,6 +169,9 @@ class replPrompt(Cmd):
             #if 'error' in pub_metadata[4]:
             #    print(pub_metadata)
             #    raise Exception(pub_metadata[5])
+
+            if global_args['--debug']:
+                print('publish metadata:', pub_metadata)
         finally:
             # Reset the uri_base no matter what happens
             wamp.wamp.uri_base = uri_base_bkp
@@ -151,13 +181,24 @@ class replPrompt(Cmd):
         wamp.wamp.uri_base = ''
 
         try:
-            uri = self.get_full_zerp_uri(uri_base_bkp, uri)
-            sub_data = wamp.wamp.subscribe(uri, *args, **kwargs)
+            full_uri = self.get_full_zerp_uri(uri_base_bkp, uri)
+
+            if global_args['--debug']:
+                print('operation: publish')
+                print('input URI:', uri)
+                print('full URI used:', full_uri)
+                print('args:', args)
+                print('kwargs:', kwargs)
+
+            sub_data = wamp.wamp.subscribe(full_uri, *args, **kwargs)
 
             if not sub_data:
                 raise Exception("Could not subscribe to '{}'. Not allowed?".format(
-                    uri
+                    full_uri
                 ))
+
+            if global_args['--debug']:
+                print('subscription metadata:', sub_data)
 
             return sub_data
         finally:
@@ -243,7 +284,6 @@ class replPrompt(Cmd):
 
         try:
             sub_metadata = self.subscribe_uri(args, self.sub_callback)
-            print(sub_metadata)
             print('Listening for publish events on {}'.format(args))
 
             # Keep the process alive for ever (until a keyboard interrupt happens)
