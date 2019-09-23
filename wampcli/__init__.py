@@ -1,24 +1,18 @@
 """
 Usage:
-    {name}
+    wampcli
         [-e=<val> | --environment=<val>]
-    {name} call <command>
+    wampcli call <command>
         [-e=<val> | --environment=<val>]
-    {name} pub <command>
+    wampcli pub <command>
         [-e=<val> | --environment=<val>]
-    {name} sub <command>
+    wampcli sub <command>
         [-e=<val> | --environment=<val>]
 
 Options:
     -e=<val>, --environment=<val>
                     The environment (defined in the ~/izaber.yaml) to use for
                     process. [default: ]
-    
-External Dependencies:
-    - iZaber for communication to ZERP
-        python3 -m pip install izaber-wamp-zerp
-    - docopt for handling command line arguments
-        python3 -m pip install docopt
 
 Config File:
     In order to communicate with Zerp, copy the following 
@@ -52,7 +46,6 @@ from cmd import Cmd
 import sys
 import re
 import os
-import asyncio
 import time
 
 from pprint import pprint
@@ -82,13 +75,37 @@ class replPrompt(Cmd):
 
         return uri, params
 
+    def get_full_zerp_uri(self, uri_base, raw_uri):
+        # Return the raw_uri as is if it starts with `com` or `wamp` because we can assume the
+        # user provided us with the full URI in these cases
+        if raw_uri.startswith('com') or raw_uri.startswith('wamp'):
+            return raw_uri
+
+        # If there is a `..` in the raw_uri then we can assume that the user provided us with a
+        # shorthand version of the full URI. For example
+        #   A shorthand like this: product.product..read()
+        #   needs to become a URI like this: com.izaber.wamp.zer:<db_name>:product.product:object.execute.read()
+        if '..' in raw_uri:
+            # TODO implement this
+            raise Exception("'..' shorthand not implemented yet")
+
+        # If the raw_uri did not start with `com` or `wamp`, and did not use the shorthand notation
+        # then we can assume that the user provided us with the ending part of the URI i.e. the part
+        # the database name. For example:
+        #   A raw_uri like this: product.product:object.execute.read()
+        #   needs to become a URI like this: com.izaber.wamp.zer:<db_name>:product.product:object.execute.read()
+        return '{}.zerp:{}:{}'.format(
+            uri_base, 
+            zerp.database, 
+            raw_uri
+        )
+
     def call_uri(self, uri, *args, **kwargs):
         uri_base_bkp = wamp.wamp.uri_base
         wamp.wamp.uri_base = ''
 
         try:
-            if not (uri.startswith('com') or uri.startswith('wamp')):
-                uri = f'{uri_base_bkp}.zerp:{zerp.database}:{uri}'
+            uri = self.get_full_zerp_uri(uri_base_bkp, uri)
             return wamp.wamp.call(uri, *args, **kwargs)
         finally:
             # Reset the uri_base no matter what happens
@@ -99,12 +116,12 @@ class replPrompt(Cmd):
         wamp.wamp.uri_base = ''
 
         try:
-            if not (uri.startswith('com') or uri.startswith('wamp')):
-                uri = f'{uri_base_bkp}.zerp:{zerp.database}:{uri}'
             pub_metadata = wamp.wamp.publish(uri, *args, **kwargs)
 
             if not pub_metadata:
-                raise Exception(f"publish call returned '{pub_metadata}")
+                raise Exception("publish call returned '{}'".format(
+                    pub_metadata
+                ))
             
             #if 'error' in pub_metadata[4]:
             #    print(pub_metadata)
@@ -118,13 +135,13 @@ class replPrompt(Cmd):
         wamp.wamp.uri_base = ''
 
         try:
-            if not (uri.startswith('com') or uri.startswith('wamp')):
-                uri = f'{uri_base_bkp}.zerp:{zerp.database}:{uri}'
-
+            uri = self.get_full_zerp_uri(uri_base_bkp, uri)
             sub_data = wamp.wamp.subscribe(uri, *args, **kwargs)
 
             if not sub_data:
-                raise Exception(f"Could not subscribe to '{uri}'. Not allowed?")
+                raise Exception("Could not subscribe to '{}'. Not allowed?".format(
+                    uri
+                ))
 
             return sub_data
         finally:
@@ -135,7 +152,9 @@ class replPrompt(Cmd):
     # CALLBACKS -------------------------------------------
 
     def sub_callback(_a, _b, *args, **kwargs):
-        print(f'\n{datetime.now()} - Sub data received')
+        print('\n{} - Sub data received'.format(
+            datetime.now()
+        ))
         pprint(args)
         pprint(kwargs)
 
@@ -156,7 +175,7 @@ class replPrompt(Cmd):
 
         try:
             uri, params = self.parse_args(args)
-            result = eval(f'self.call_uri(\'{uri}\', {params})')
+            result = eval('self.call_uri(\'{}\', {})'.format(uri, params))
             pprint(result)
         except Exception as e:
             print(e)
@@ -178,7 +197,7 @@ class replPrompt(Cmd):
 
         try:
             uri, params = self.parse_args(args)
-            print(eval(f'self.publish_uri(\'{uri}\', {params})'))
+            print(eval('self.publish_uri(\'{}\', {})'.format(uri, params)))
         except Exception as e:
             print(e)
 
@@ -203,20 +222,17 @@ class replPrompt(Cmd):
         # Apply stdin if needed before doing anything else
         args = args.format(stdin=global_args['stdin'])
 
-        # Prepare a new async event loop that will wait for published results efficiently
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
         # Data about the subscription that will be needed when we want to unsubscribe
         sub_metadata = None
 
         try:
             sub_metadata = self.subscribe_uri(args, self.sub_callback)
             print(sub_metadata)
-            print(f'Listening for publish events on {args}')
+            print('Listening for publish events on {}'.format(args))
 
             # Keep the process alive for ever (until a keyboard interrupt happens)
-            loop.run_forever()
+            while True:
+                time.sleep(10)
         except KeyboardInterrupt:
             # This is here to prevent it from propagating to the try except in 'main' which would
             # have closed the REPL completely
@@ -224,11 +240,9 @@ class replPrompt(Cmd):
         except Exception as e:
             print(e)
         finally:
-            # Stop the event loop and unsubscribe from the wamp subscription
-            loop.stop()
-            loop.close()
+            # Stop the wait loop and unsubscribe from the wamp subscription
             if sub_metadata:
-                print(f'Unsubscribing from {args}')
+                print('Unsubscribing from {}'.format(args))
                 wamp.wamp.unsubscribe(sub_metadata.subscription_id)
 
     def do_quit(self, args):
@@ -242,10 +256,7 @@ class replPrompt(Cmd):
 def run_main():
     global global_args
 
-    global_args = docopt(__doc__.format(
-        name=os.path.basename(__file__),
-        stdin='{stdin}'
-    ))
+    global_args = docopt(__doc__)
 
     # Parse stdin data if it exists and put it in args
     global_args['stdin'] = ''
