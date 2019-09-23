@@ -35,12 +35,16 @@ Config File:
         Windows: \\Users\\<yourusername>\\izaber.yaml
 """
 
+from __future__ import print_function
+from __future__ import absolute_import
+
 import swampyer
 from docopt import docopt
 
 from izaber import initialize
-from izaber.wamp.zerp import zerp
-from izaber.wamp.zerp import wamp
+from izaber_wamp_zerp import zerp
+from izaber_wamp_zerp import wamp
+from izaber_wamp_zerp.controller import METHOD_SHORTHANDS
 
 from cmd import Cmd
 import sys
@@ -50,26 +54,6 @@ import time
 
 from pprint import pprint
 from datetime import datetime
-
-# CONSTANTS ---------------------------------------------------------------------------------------
-
-SHORTHAND_OPERATION_MAP = {
-    '..schema':           'object.execute.fields_get',
-    '..exec_workflow':    'object.exec_workflow',
-    '..wizard_create':    'wizard.create',
-    '..report':           'report.report',
-    '..report_get':       'report.report_get',
-    '..reports_fetch':    'report.report_get',
-    '..search':           'object.execute.search',
-    '..search_fetch':     'object.execute.zerp_search_read',
-    '..search_fetch_one': 'object.execute.zerp_search_read_one',
-    '..read':             'object.execute.read',
-    '..fetch':            'object.execute.read',
-    '..fetch_one':        'object.execute.read',
-    '..write':            'object.execute.write',
-    '..create':           'object.execute.create',
-    '..unlink':           'object.execute.unlink',
-}
 
 # REPL --------------------------------------------------------------------------------------------
 
@@ -89,24 +73,21 @@ class replPrompt(Cmd):
             raise Exception('No arguments provided. Use "help" for proper syntax')
 
         # Get the captured group but remove the 1 and last character (the brackets)
+        uri = args[0:reResult.start()]
         params = reResult.group()[1:-1]
-
-        #params = params.replace('(', '')
-        #params = params.replace(')', '') 
-        uri = args[0:reResult.span()[0]]
 
         return uri, params
 
     def get_expanded_shorthand_uri(self, uri_base, raw_uri):
         reResult = re.search(r'\.\..*$', raw_uri)
         if reResult:
-            shorthand = reResult.group()
+            shorthand = reResult.group()[2:]
             model = raw_uri[0:reResult.start()]
             return '{}.zerp:{}:{}:{}'.format(
                 uri_base,
                 zerp.database,
                 model,
-                SHORTHAND_OPERATION_MAP[shorthand]
+                METHOD_SHORTHANDS[shorthand]
             )
         else:
             raise Exception("Could not parse the shorthand URI: {}".format(raw_uri))
