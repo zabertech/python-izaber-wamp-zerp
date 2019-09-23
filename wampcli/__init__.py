@@ -269,11 +269,9 @@ def run_main():
     # Connect to Zerp over the WAMP messagebus
     if global_args['--environment']:
         # Use the user defined environment
-        print('Using env:', global_args['--environment'])
         initialize('izaber-wamp', environment=global_args['--environment'])
     else:
         # Use the default environment
-        print('Using env: default')
         initialize('izaber-wamp')
 
     # Initialize the REPL
