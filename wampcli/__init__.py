@@ -51,6 +51,26 @@ import time
 from pprint import pprint
 from datetime import datetime
 
+# CONSTANTS ---------------------------------------------------------------------------------------
+
+SHORTHAND_OPERATION_MAP = {
+    '..schema':           'object.execute.fields_get',
+    '..exec_workflow':    'object.exec_workflow',
+    '..wizard_create':    'wizard.create',
+    '..report':           'report.report',
+    '..report_get':       'report.report_get',
+    '..reports_fetch':    'report.report_get',
+    '..search':           'object.execute.search',
+    '..search_fetch':     'object.execute.zerp_search_read',
+    '..search_fetch_one': 'object.execute.zerp_search_read_one',
+    '..read':             'object.execute.read',
+    '..fetch':            'object.execute.read',
+    '..fetch_one':        'object.execute.read',
+    '..write':            'object.execute.write',
+    '..create':           'object.execute.create',
+    '..unlink':           'object.execute.unlink',
+}
+
 # REPL --------------------------------------------------------------------------------------------
 
 class replPrompt(Cmd):
@@ -68,12 +88,28 @@ class replPrompt(Cmd):
         if not reResult:
             raise Exception('No arguments provided. Use "help" for proper syntax')
 
-        params = reResult.group()
-        params = params.replace('(', '')
-        params = params.replace(')', '') 
+        # Get the captured group but remove the 1 and last character (the brackets)
+        params = reResult.group()[1:-1]
+
+        #params = params.replace('(', '')
+        #params = params.replace(')', '') 
         uri = args[0:reResult.span()[0]]
 
         return uri, params
+
+    def get_expanded_shorthand_uri(self, uri_base, raw_uri):
+        reResult = re.search(r'\.\..*$', raw_uri)
+        if reResult:
+            shorthand = reResult.group()
+            model = raw_uri[0:reResult.start()]
+            return '{}.zerp:{}:{}:{}'.format(
+                uri_base,
+                zerp.database,
+                model,
+                SHORTHAND_OPERATION_MAP[shorthand]
+            )
+        else:
+            raise Exception("Could not parse the shorthand URI: {}".format(raw_uri))
 
     def get_full_zerp_uri(self, uri_base, raw_uri):
         # Return the raw_uri as is if it starts with `com` or `wamp` because we can assume the
@@ -84,16 +120,15 @@ class replPrompt(Cmd):
         # If there is a `..` in the raw_uri then we can assume that the user provided us with a
         # shorthand version of the full URI. For example
         #   A shorthand like this: product.product..read()
-        #   needs to become a URI like this: com.izaber.wamp.zer:<db_name>:product.product:object.execute.read()
+        #   needs to become a URI like this: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read()
         if '..' in raw_uri:
-            # TODO implement this
-            raise Exception("'..' shorthand not implemented yet")
+            return self.get_expanded_shorthand_uri(uri_base, raw_uri)
 
         # If the raw_uri did not start with `com` or `wamp`, and did not use the shorthand notation
         # then we can assume that the user provided us with the ending part of the URI i.e. the part
         # the database name. For example:
         #   A raw_uri like this: product.product:object.execute.read()
-        #   needs to become a URI like this: com.izaber.wamp.zer:<db_name>:product.product:object.execute.read()
+        #   needs to become a URI like this: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read()
         return '{}.zerp:{}:{}'.format(
             uri_base, 
             zerp.database, 
@@ -245,10 +280,13 @@ class replPrompt(Cmd):
                 print('Unsubscribing from {}'.format(args))
                 wamp.wamp.unsubscribe(sub_metadata.subscription_id)
 
+    def do_EOF(self, line):
+        return True
+
     def do_quit(self, args):
         """Quits the program."""
 
-        print('Quitting')
+        print('\nQuitting')
         raise SystemExit
 
 # MAIN --------------------------------------------------------------------------------------------
