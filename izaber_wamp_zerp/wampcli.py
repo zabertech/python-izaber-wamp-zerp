@@ -42,9 +42,9 @@ import swampyer
 from docopt import docopt
 
 from izaber import initialize
-from izaber_wamp_zerp import zerp
-from izaber_wamp_zerp import wamp
-from izaber_wamp_zerp.controller import METHOD_SHORTHANDS
+from . import zerp
+from . import wamp
+from .controller import METHOD_SHORTHANDS
 
 from cmd import Cmd
 import sys
