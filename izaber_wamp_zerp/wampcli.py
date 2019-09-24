@@ -59,6 +59,7 @@ import time
 
 from pprint import pprint
 from datetime import datetime
+import traceback
 
 # REPL --------------------------------------------------------------------------------------------
 
@@ -232,7 +233,10 @@ class replPrompt(Cmd):
             result = eval("self.call_uri(\'{}\', {})".format(uri, params))
             pprint(result)
         except Exception as e:
-            print(e)
+            if global_args['--debug']:
+                traceback.print_exc()
+            else:
+                print('Error:', e)
 
     def do_pub(self, args):
         """
@@ -253,7 +257,10 @@ class replPrompt(Cmd):
             uri, params = self.parse_args(args)
             eval("self.publish_uri(\'{}\', {})".format(uri, params))
         except Exception as e:
-            print(e)
+            if global_args['--debug']:
+                traceback.print_exc()
+            else:
+                print('Error:', e)
 
     def do_sub(self, args):
         """
@@ -291,7 +298,10 @@ class replPrompt(Cmd):
             # have closed the REPL completely
             pass
         except Exception as e:
-            print(e)
+            if global_args['--debug']:
+                traceback.print_exc()
+            else:
+                print('Error:', e)
         finally:
             # Stop the wait loop and unsubscribe from the wamp subscription
             if sub_metadata:
