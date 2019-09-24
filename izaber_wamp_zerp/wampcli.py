@@ -224,10 +224,10 @@ class replPrompt(Cmd):
         """
         - Call a uri with the given args and kwargs
         - The URI can be provided in 3 ways
-            - Shorthand URIs for WAMP
+            - Shorthand URIs for ZERP
                 - A wamp URI like this: product.product..read
                 - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
-            - Short URIs for WAMP
+            - Short URIs for ZERP
                 - A wamp URI like this: product.product:object.execute.read
                 - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
             - The full URI starting with `com` or `wamp`. If the URI does not 
@@ -259,7 +259,7 @@ class replPrompt(Cmd):
         """
         - publish data to a uri with the given args and kwargs
         - The URI can be provided in 3 ways
-            - Short URIs for WAMP
+            - Short URIs for ZERP
                 - A wamp URI like this: product.product:object.execute.read
                 - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
             - The full URI starting with `com` or `wamp`. If the URI does not 
@@ -290,7 +290,7 @@ class replPrompt(Cmd):
         """
         - subscribe to a URI and listen for any published events on the same URI
         - The URI can be provided in 3 ways
-            - Short URIs for WAMP
+            - Short URIs for ZERP
                 - A wamp URI like this: product.product:object.execute.read
                 - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
             - The full URI starting with `com` or `wamp`. If the URI does not 
