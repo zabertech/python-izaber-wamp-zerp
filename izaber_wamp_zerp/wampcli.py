@@ -161,14 +161,10 @@ class replPrompt(Cmd):
 
             pub_metadata = wamp.wamp.publish(full_uri, *args, **kwargs)
 
-            if not pub_metadata:
-                raise Exception("publish call returned '{}'".format(
+            if not pub_metadata or 'error' in str(pub_metadata):
+                raise Exception("publish call returned: {}".format(
                     pub_metadata
                 ))
-            
-            #if 'error' in pub_metadata[4]:
-            #    print(pub_metadata)
-            #    raise Exception(pub_metadata[5])
 
             if global_args['--debug']:
                 print('publish metadata:', pub_metadata)
@@ -184,7 +180,7 @@ class replPrompt(Cmd):
             full_uri = self.get_full_zerp_uri(uri_base_bkp, uri)
 
             if global_args['--debug']:
-                print('operation: publish')
+                print('operation: subscribe')
                 print('input URI:', uri)
                 print('full URI used:', full_uri)
                 print('args:', args)
@@ -192,10 +188,11 @@ class replPrompt(Cmd):
 
             sub_data = wamp.wamp.subscribe(full_uri, *args, **kwargs)
 
-            if not sub_data:
-                raise Exception("Could not subscribe to '{}'. Not allowed?".format(
-                    full_uri
-                ))
+            #print(sub_data)
+            #if not sub_data:
+            #    raise Exception("Could not subscribe to '{}'. Not allowed?".format(
+            #        full_uri
+            #    ))
 
             if global_args['--debug']:
                 print('subscription metadata:', sub_data)
@@ -232,7 +229,7 @@ class replPrompt(Cmd):
 
         try:
             uri, params = self.parse_args(args)
-            result = eval('self.call_uri(\'{}\', {})'.format(uri, params))
+            result = eval("self.call_uri(\'{}\', {})".format(uri, params))
             pprint(result)
         except Exception as e:
             print(e)
@@ -254,7 +251,7 @@ class replPrompt(Cmd):
 
         try:
             uri, params = self.parse_args(args)
-            print(eval('self.publish_uri(\'{}\', {})'.format(uri, params)))
+            eval("self.publish_uri(\'{}\', {})".format(uri, params))
         except Exception as e:
             print(e)
 
@@ -328,9 +325,13 @@ def run_main():
     # Connect to Zerp over the WAMP messagebus
     if global_args['--environment']:
         # Use the user defined environment
+        if global_args['--debug']:
+            print('Using env:', global_args['--environment'])
         initialize('izaber-wamp', environment=global_args['--environment'])
     else:
         # Use the default environment
+        if global_args['--debug']:
+            print('Using env: default')
         initialize('izaber-wamp')
 
     # Initialize the REPL
