@@ -70,8 +70,9 @@ class replPrompt(Cmd):
     # HELPERS ---------------------------------------------
 
     def parse_args(self, args):
-        # Apply stdin if needed before doing anything else
-        args = args.format(stdin=global_args['stdin'])
+        # Apply stdin if needed before doing anything else. Not using args.format() because it
+        # gets tripped up over other user provided usage of curly {} brackets
+        args = args.replace('{stdin}', global_args['stdin'])
 
         # This regex looks for the (....) part of the args
         reResult = re.search(r'\(.*\)', args)
