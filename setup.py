@@ -11,7 +11,7 @@ setup(
     author='Aki Mimoto',
     author_email='aki+izaber@zaber.com',
     license='MIT',
-    packages=['izaber_wamp_zerp', 'wampcli'],
+    packages=['izaber_wamp_zerp'],
     scripts=[],
     entry_points={
         'console_scripts': [
