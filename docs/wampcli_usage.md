@@ -8,11 +8,11 @@ It can be run in 2 modes
 - REPL mode
     - Run it by calling `wampcli` in your command line
     - This open a custom command line where you can run ZERP related commands
-    - The available commands are described in the (Commands)[#commands] section below
+    - The available commands are described in the [Commands](#commands) section below
 - Standalone mode
     - All of the commands available in the REPL mode can also be run straight from the the command line itself.
     - This allows you to make use of stdin and stdout functionality in terminals
-        - stdin usage is described in the (Using STDIN)[#using-stdin] section
+        - stdin usage is described in the [Using STDIN](#using-stdin) section
         - All output from the script can be easily routed to a file or other sink using the `>` operator in terminals
         - One can theoreticall
     - It also allows for one off calls that can be easily run from bash scripts, cron jobs, etc

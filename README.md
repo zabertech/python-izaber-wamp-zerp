@@ -39,5 +39,5 @@ The module reads all of its settings from a globally defined configuration file 
 
 ## Usage
 
-- (Using izaber-wamp-zerp in python scripts)[docs/usage_in_scripts.md]
-- (Running simple commands on the command line using WAMP CLI)[docs/wampcli_usage.md]
+- [Using izaber-wamp-zerp in python scripts](docs/usage_in_scripts.md)
+- [Running simple commands on the command line using WAMP CLI](docs/wampcli_usage.md)
