@@ -3,21 +3,31 @@ Usage:
     wampcli
         [-e=<val> | --environment=<val>]
         [-d | --debug]
+        [-l | --all-logs]
     wampcli call <command>
         [-e=<val> | --environment=<val>]
         [-d | --debug]
+        [-l | --all-logs]
     wampcli pub <command>
         [-e=<val> | --environment=<val>]
         [-d | --debug]
+        [-l | --all-logs]
     wampcli sub <command>
         [-e=<val> | --environment=<val>]
         [-d | --debug]
+        [-l | --all-logs]
 
 Options:
     -e=<val>, --environment=<val>
                     The environment (defined in the ~/izaber.yaml) to use for
-                    process. [default: ]
-    -d, --debug     Print out debug information for the wamp operations
+                    process. Useful for changing the nexus server or the 
+                    databases used for the wamp calls [default: ]
+    -d, --debug     Print out debug information for the wamp operations.
+                    Helpful for understanding why a call might be failing
+    -l, --all-logs
+                    Log everything about the wamp communication down to the
+                    packets being exchanged. It essentially sets the log level
+                    to 1 (i.e. logs everything) and prints the logs to stdout
 
 Config File:
     In order to communicate with Zerp, copy the following 
@@ -60,6 +70,7 @@ import time
 from pprint import pprint
 from datetime import datetime
 import traceback
+import logging
 
 # REPL --------------------------------------------------------------------------------------------
 
@@ -164,9 +175,7 @@ class replPrompt(Cmd):
             pub_metadata = wamp.wamp.publish(full_uri, *args, **kwargs)
 
             if not pub_metadata or 'error' in str(pub_metadata):
-                raise Exception("publish call returned: {}".format(
-                    pub_metadata
-                ))
+                raise Exception("publish call returned: {}".format(pub_metadata))
 
             if global_args['--debug']:
                 print('publish metadata:', pub_metadata)
@@ -188,18 +197,15 @@ class replPrompt(Cmd):
                 print('args:', args)
                 print('kwargs:', kwargs)
 
-            sub_data = wamp.wamp.subscribe(full_uri, *args, **kwargs)
+            sub_metadata = wamp.wamp.subscribe(full_uri, *args, **kwargs)
 
-            #print(sub_data)
-            #if not sub_data:
-            #    raise Exception("Could not subscribe to '{}'. Not allowed?".format(
-            #        full_uri
-            #    ))
+            if not sub_metadata or 'error' in str(sub_metadata):
+                raise Exception("subscription call returned: {}".format(sub_metadata))
 
             if global_args['--debug']:
-                print('subscription metadata:', sub_data)
+                print('subscription metadata:', sub_metadata)
 
-            return sub_data
+            return sub_metadata
         finally:
             # Reset the uri_base no matter what happens
             wamp.wamp.uri_base = uri_base_bkp
@@ -208,9 +214,7 @@ class replPrompt(Cmd):
     # CALLBACKS -------------------------------------------
 
     def sub_callback(_a, _b, *args, **kwargs):
-        print('\n{} - Sub data received'.format(
-            datetime.now()
-        ))
+        print('\n{} - Sub data received'.format(datetime.now()))
         pprint(args)
         pprint(kwargs)
 
@@ -219,14 +223,26 @@ class replPrompt(Cmd):
     def do_call(self, args):
         """
         - Call a uri with the given args and kwargs
+        - The URI can be provided in 3 ways
+            - Shorthand URIs for WAMP
+                - A wamp URI like this: product.product..read
+                - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
+            - Short URIs for WAMP
+                - A wamp URI like this: product.product:object.execute.read
+                - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
+            - The full URI starting with `com` or `wamp`. If the URI does not 
+              start with `com` or `wamp` then the URI is assumed to be a 
+              shortended URI
         - The args and kwargs must be provided in the python format
         - syntax
    
             call <uri_to_call>(arg1, arg2, kwarg1=val1, ...)
 
-        - example
+        - example: All of the following commands do that same thing
    
-            call com.ghar.api.randtext.generate('8pc', count=5)
+            call com.izaber.wamp.zerp:sandbox:product.product:object.execute.read(1596, ['default_code'])
+            call product.product:object.execute.read(1596, ['default_code'])
+            call product.product..read(1596, ['default_code'])
         """
 
         try:
@@ -242,6 +258,13 @@ class replPrompt(Cmd):
     def do_pub(self, args):
         """
         - publish data to a uri with the given args and kwargs
+        - The URI can be provided in 3 ways
+            - Short URIs for WAMP
+                - A wamp URI like this: product.product:object.execute.read
+                - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
+            - The full URI starting with `com` or `wamp`. If the URI does not 
+              start with `com` or `wamp` then the URI is assumed to be a 
+              shortended URI
         - The args and kwargs must be provided in the python format
             - args should be an array 
             - kwargs should be a dict
@@ -251,7 +274,7 @@ class replPrompt(Cmd):
 
         - example
             
-            pub com.ghar.api.some_sub(args=[1, 2], kwargs={ var1: 42 })
+            pub com.izaber.wamp.wampcli.test(args=[1, 2], kwargs={ var1: 42 })
         """
 
         try:
@@ -266,6 +289,13 @@ class replPrompt(Cmd):
     def do_sub(self, args):
         """
         - subscribe to a URI and listen for any published events on the same URI
+        - The URI can be provided in 3 ways
+            - Short URIs for WAMP
+                - A wamp URI like this: product.product:object.execute.read
+                - Becomes: com.izaber.wamp.zerp:<db_name>:product.product:object.execute.read
+            - The full URI starting with `com` or `wamp`. If the URI does not 
+              start with `com` or `wamp` then the URI is assumed to be a 
+              shortended URI
         - No arguments must be provided
         - You will not be able to interact with the shell any more because the
           CLI is waiting for data to be published to the URI
@@ -278,7 +308,7 @@ class replPrompt(Cmd):
 
         - example
             
-            sub com.ghar.api.some_sub
+            sub com.izaber.wamp.wampcli.test
         """
 
         # Apply stdin if needed before doing anything else
@@ -332,6 +362,10 @@ def run_main():
         for line in sys.stdin:
             global_args['stdin'] += line
     global_args['stdin'] = global_args['stdin'].rstrip()
+
+    # Enable full logging if user wants
+    if global_args['--all-logs']:
+        logging.basicConfig(stream=sys.stdout, level=1)
 
     # Connect to Zerp over the WAMP messagebus
     if global_args['--environment']:
