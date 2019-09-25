@@ -10,6 +10,7 @@ METHOD_SHORTHANDS = {
     'search':           'object.execute.search',
     'search_fetch':     'object.execute.zerp_search_read',
     'search_fetch_one': 'object.execute.zerp_search_read_one',
+    'read':             'object.execute.read',
     'fetch':            'object.execute.read',
     'fetch_one':        'object.execute.read',
     'write':            'object.execute.write',
