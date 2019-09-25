@@ -101,11 +101,18 @@ class replPrompt(Cmd):
         if reResult:
             shorthand = reResult.group()[2:]
             model = raw_uri[0:reResult.start()]
+
+            shorthand_method = METHOD_SHORTHANDS.get(shorthand, '')
+            if not shorthand_method:
+                # The shorthand has no existing method defined for it so we can try and assume that
+                # the shorthand_method should have the format `object.execute.<shorthand>`
+                shorthand_method = 'object.execute.{}'.format(shorthand)
+
             return '{}.zerp:{}:{}:{}'.format(
                 uri_base,
                 zerp.database,
                 model,
-                METHOD_SHORTHANDS[shorthand]
+                shorthand_method
             )
         else:
             raise Exception("Could not parse the shorthand URI: {}".format(raw_uri))
