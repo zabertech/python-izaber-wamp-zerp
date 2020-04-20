@@ -10,7 +10,7 @@ from izaber import config, app_config
 from izaber.startup import request_initialize, initializer
 from izaber.wamp import wamp
 
-__version__ = '2.04'
+__version__ = '2.05'
 
 CONFIG_BASE = """
 default:

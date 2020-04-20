@@ -80,6 +80,35 @@ class ZERP(object):
         self.configure(*args,**kwargs)
         self.schema_cache = {}
 
+    def hello(self, file_, **kwargs):
+        from socket import gethostname
+        from . import __version__
+        try:
+            hostname = gethostname()
+        except Exception as err:
+            hostname = None
+            logging.error("Unable to determine hostname {}".format(err))
+        try:
+            ipaddress = self.wamp.wamp.ws.sock.getsockname()[0]
+        except Exception as err:
+            ipaddress = None
+            logging.error("Unable to determine ipaddress {}".format(err))
+        try:
+            authid = self.wamp.wamp.authid
+        except Exception as err:
+            authid = None
+            logging.error("Unable to determine authid {}".format(err))
+        description = "\"izaber.wamp.zerp {version} ({authid}) {description}\"".format(
+                version=__version__,
+                authid=authid,
+                description=kwargs.get("description", ""))
+        kwargs.update({
+            "hostname": hostname,
+            "ipaddress": ipaddress,
+            "description": description
+        })
+        self.get("res.users").hello(file_, **kwargs)
+
     def configure(self,
                     wamp=None,
                     database=None):
@@ -103,3 +132,4 @@ class ZERP(object):
 
     def report_get(self,report_id):
         return self.call('report.report_get',report_id)
+
