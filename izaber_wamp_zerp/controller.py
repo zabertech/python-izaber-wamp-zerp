@@ -81,6 +81,21 @@ class ZERP(object):
         self.schema_cache = {}
 
     def hello(self, file_, **kwargs):
+        """Introduce yourself to Zerp so a log entry can be made to aid
+        in troubleshooting. Must be called after initialize.
+        :param file_:
+            The filename of this script. (__file__)
+        :Keyword Arguments:
+            * *author* --
+                The name of the author of this script.
+            * *version* --
+                The version number of this script.
+            * *description* --
+                A description of the purpose of this script.
+        :example:
+
+        >>> zerp.hello(__file__, author="My Name", version="1.0", description="Just an example")
+        """
         from socket import gethostname
         from . import __version__
         try:
@@ -107,7 +122,7 @@ class ZERP(object):
             "ipaddress": ipaddress,
             "description": description
         })
-        self.get("res.users").hello(file_, **kwargs)
+        return self.get("res.users").hello(file_, **kwargs)
 
     def configure(self,
                     wamp=None,
