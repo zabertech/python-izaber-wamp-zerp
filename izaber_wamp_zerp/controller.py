@@ -80,6 +80,53 @@ class ZERP(object):
         self.configure(*args,**kwargs)
         self.schema_cache = {}
 
+    def hello(self, file_, **kwargs):
+        """Introduce yourself to Zerp so a log entry can be made to aid
+        in troubleshooting. Must be called after initialize.
+        :param file_:
+            The filename of this script. (__file__)
+        :Keyword Arguments:
+            All keyword arguments are recorded in the Zerp log entry as
+            "*key*: *value*". I suggest supplying at least the following
+            arguments.
+            * *author* --
+                The name of the author of this script.
+            * *version* --
+                The version number of this script.
+            * *description* --
+                A description of the purpose of this script.
+        :example:
+
+        >>> zerp.hello(__file__, author="My Name", version="1.0", description="Just an example")
+        """
+        from socket import gethostname
+        from . import __version__
+        try:
+            hostname = gethostname()
+        except Exception as err:
+            hostname = None
+            logging.error("Unable to determine hostname {}".format(err))
+        try:
+            ipaddress = self.wamp.wamp.ws.sock.getsockname()[0]
+        except Exception as err:
+            ipaddress = None
+            logging.error("Unable to determine ipaddress {}".format(err))
+        try:
+            authid = self.wamp.wamp.authid
+        except Exception as err:
+            authid = None
+            logging.error("Unable to determine authid {}".format(err))
+        description = "\"izaber.wamp.zerp {version} ({authid}) {description}\"".format(
+                version=__version__,
+                authid=authid,
+                description=kwargs.get("description", ""))
+        kwargs.update({
+            "hostname": hostname,
+            "ipaddress": ipaddress,
+            "description": description
+        })
+        return self.get("res.users").hello(file_, **kwargs)
+
     def configure(self,
                     wamp=None,
                     database=None):
@@ -103,3 +150,4 @@ class ZERP(object):
 
     def report_get(self,report_id):
         return self.call('report.report_get',report_id)
+

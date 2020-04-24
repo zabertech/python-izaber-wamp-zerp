@@ -16,8 +16,12 @@ from izaber.wamp.zerp import zerp
 # Connect to Zerp over the WAMP bus
 initialize('izaber-wamp')
 
+# Identify yourself to Zerp to help IT troubleshoot issues
+zerp.hello(__file__, author="My Name", description="This script is just an example")
+
 # Use the 'zerp' object for the rest of your WAMP related code 
 ```
+
 
 This will give you a `zerp` object that you can use to execute commands on the ZERP server you are connected to
 
