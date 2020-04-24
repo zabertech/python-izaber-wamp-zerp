@@ -86,6 +86,9 @@ class ZERP(object):
         :param file_:
             The filename of this script. (__file__)
         :Keyword Arguments:
+            All keyword arguments are recorded in the Zerp log entry as
+            "*key*: *value*". I suggest supplying at least the following
+            arguments.
             * *author* --
                 The name of the author of this script.
             * *version* --
