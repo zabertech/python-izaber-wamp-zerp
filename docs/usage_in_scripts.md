@@ -91,6 +91,8 @@ For each model, the following methods are available:
             ]
         })
         ```
+        The first number of the tuples indicate the kind of link record operation to be performed.
+        See [Advanced Scipt Usage Documentation](advanced_script_usage.md) for more detail.
 - `model.create(values)`: Create new items in the model
     - **Arguments**
         - values - *Dictionary* - Field name and value combinations to create the item with. Creating linked fields can also be achieved by defining a list of tuples for the one2many or many2many fields.
