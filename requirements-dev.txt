@@ -10,4 +10,7 @@
 # `Pipfile.lock` and then regenerate `requirements*.txt`.
 ################################################################################
 
-izaber-wamp
+pipenv-to-requirements
+pytest
+tox
+twine

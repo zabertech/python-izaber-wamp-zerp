@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='izaber_wamp_zerp',
-    version='2.7.20200424',
+    version='2.7.20201015',
     description='Base load point for iZaber WAMP ZERP code',
     url = 'https://github.com/zabertech/python-izaber-wamp-zerp',
     download_url = 'https://github.com/zabertech/python-izaber-wamp-zerp/archive/2.7.20200424.tar.gz',

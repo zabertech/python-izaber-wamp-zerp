@@ -1,3 +1,4 @@
+from izaber.log import log
 from izaber.compat import *
 
 METHOD_SHORTHANDS = {
@@ -105,17 +106,36 @@ class ZERP(object):
             hostname = gethostname()
         except Exception as err:
             hostname = None
-            logging.error("Unable to determine hostname {}".format(err))
+            log.error("Unable to determine hostname {}".format(err))
         try:
-            ipaddress = self.wamp.wamp.ws.sock.getsockname()[0]
+
+            # This is a deprecated method of getting the connection IP from
+            # the wamp connection. With version 2.x, as the internal structure
+            # has moved from being websocket-only to an abstracted transport,
+            # connecting directly to a websocket instance is no longer feasible.
+            try:
+                ipaddress = self.wamp.wamp.ws.sock.getsockname()[0]
+            except AttributeError:
+                # Pinched from:
+                # https://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib/28950776#28950776
+                # FIXME: This will only support IPv4 addresses, at some point
+                # we'd want to allow IPv6 or even other types of network/mesh
+                # identities
+                import socket
+                sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                try:
+                    sock.connect(('10.255.255.255', 1))
+                    ipaddress = sock.getsockname()[0]
+                finally:
+                    sock.close()
         except Exception as err:
             ipaddress = None
-            logging.error("Unable to determine ipaddress {}".format(err))
+            log.error("Unable to determine ipaddress {}".format(err))
         try:
             authid = self.wamp.wamp.authid
         except Exception as err:
             authid = None
-            logging.error("Unable to determine authid {}".format(err))
+            log.error("Unable to determine authid {}".format(err))
         description = "\"izaber.wamp.zerp {version} ({authid}) {description}\"".format(
                 version=__version__,
                 authid=authid,
