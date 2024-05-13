@@ -12,6 +12,7 @@ setup(
     author_email='aki+izaber@zaber.com',
     license='MIT',
     packages=['izaber_wamp_zerp'],
+    package_data={"": ["*.pyi", "**/*.pyi", "**/**/*.pyi"]},
     scripts=[],
     entry_points={
         'console_scripts': [
@@ -26,5 +27,5 @@ setup(
     ],
     dependency_links=[
     ],
-    zip_safe=False
+    zip_safe=False,
 )

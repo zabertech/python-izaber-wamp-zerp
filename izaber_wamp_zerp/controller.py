@@ -1,5 +1,10 @@
+import time
+import base64
+
 from izaber.log import log
-from izaber.compat import *
+from izaber.compat import unicode
+from typing import Union
+
 
 METHOD_SHORTHANDS = {
     'schema':           'object.execute.fields_get',
@@ -158,7 +163,13 @@ class ZERP(object):
     def schema(self,model):
         return self.call(model+':object.execute.fields_get')
 
-    def get_model(self,model):
+    from typing import Generic, TypeVar, Type, Any, overload
+
+    T = TypeVar('T')
+
+    def get_model(self,model: Union[str, Type[T]]) -> Any:
+        if not isinstance(model, str):
+            model = model.__modelname__
         return ZERPModel(self,model,self.schema(model))
 
     # Alias
