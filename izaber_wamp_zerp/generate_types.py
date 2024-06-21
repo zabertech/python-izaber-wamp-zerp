@@ -19,8 +19,6 @@ from izaber_wamp_zerp import zerp
 initialize()
 
 
-# Model directory.
-# TODO: Make sure the directory creates if it doesn't exist.
 MODEL_DIRECTORY = os.path.join(Path(__file__).parent, "models")
 
 if not os.path.exists(MODEL_DIRECTORY):
