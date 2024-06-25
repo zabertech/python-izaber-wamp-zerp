@@ -8,7 +8,7 @@ The only requirement for executing this script is to have a valid WAMP connectio
 
 ## Quick Start
 
-After installing the library and configuring your `izaber.yaml` file, run the following command in your terminal:
+After installing the library and configuring your WAMP connection, execute the following command in your terminal:
 
 ```bash
 python3 -m izaber_wamp_zerp generate-types
