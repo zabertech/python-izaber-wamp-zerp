@@ -25,7 +25,7 @@ if not os.path.exists(MODEL_DIRECTORY):
     os.mkdir(MODEL_DIRECTORY)
 
 
-# Zerp to Python field type mappings.
+# Zerp to Python field types.
 Z2P_TYPES = {
     'boolean': 'bool',
     'integer': 'int',
@@ -36,7 +36,7 @@ Z2P_TYPES = {
     'date': 'str',
     'datetime': 'str',
     'time': 'str',
-    'binary': 'str', # Bytes?
+    'binary': 'str',
     'selection': 'str',
     'many2one': 'Tuple[int, Any]',
     'one2many': 'List[int]',
@@ -69,8 +69,20 @@ BASE_ARGS = [
     'user',
 ]
 
+# List[Union[Literal["&", "|", "!"], Tuple[fields_record_name, Literal["=", "!=", ">", ">=", "<", "<=", "like", "ilike", "in", "not in", "child_of", "parent_left", "parent_right"], str]]]
 
-def module(body: List[Any], type_ignores: List) -> ast.Module:
+DOMAIN_OPERATORS = ["=", "!=", ">", ">=", "<", "<=", "like", "ilike", "in", "not in", "child_of", "parent_left", "parent_right"]
+
+SET_OPERATIONS = ["&", "|", "!"]
+
+
+def module(body: List[ast.AST], type_ignores: List[ast.TypeIgnore]) -> ast.Module:
+    """Create an ast.Module node.
+    
+    Args:
+        body: A list of the module's statements.
+        type_ignores: A list of the module's type ignore comments.
+    """
     module_node = ast.Module(
         body=body,
         type_ignores=type_ignores,
@@ -79,25 +91,15 @@ def module(body: List[Any], type_ignores: List) -> ast.Module:
 
 
 def list_annotation(member_type: str) -> ast.Subscript:
-    """Creates a list annotation node that can be used to type hint a function argument.
+    """Creates a ast.Subscript node which represents a list annotation node of the given member type.
 
-    Example:
-
-    ```
-    ids: List[int]
-
-    Becomes:
-
-    annotation=Subscript(
-        value=Name(id='List', ctx=Load()),
-        slice=Name(id='int', ctx=Load()),
-        ctx=Load())),
-    ```
+    Args:
+        member_type: The member type of the list.
     """
     LIST_IDENT = "List"
 
-    name_node = ast.Name(id=LIST_IDENT, ctx=ast.Load())
-    type_node = ast.Name(id=member_type, ctx=ast.Load())
+    name_node = name(value=LIST_IDENT, ctx=ast.Load())
+    type_node = name(value=member_type, ctx=ast.Load())
 
     node = ast.Subscript(
         value=name_node,
@@ -108,17 +110,14 @@ def list_annotation(member_type: str) -> ast.Subscript:
 
 
 def import_alias(name: str, asname: Union[str, None]=None) -> ast.alias:
-    """Create an import alias node.
+    """Create an ast.alias node representing an import alias.
 
     Example:
+        import_alias('foo', 'bar') -> foo as bar
 
-    import_alias('foo', 'bar')
-
-    Creates:
-
-    foo as bar
-
-    Which can be used in an import or import_from node.
+    Args:
+        name: The name of the object to import. 
+        asname: The alias.
     """
     alias_node = ast.alias(
         name=name,
@@ -127,33 +126,14 @@ def import_alias(name: str, asname: Union[str, None]=None) -> ast.alias:
     return alias_node
 
 
-def import_aliases(*args: str) -> List[ast.alias]:
-    """Create a list of imports.
-    
-    Example:
-
-    import_aliases('x', 'y', 'z')
-
-    Creates:
-
-    x, y, z
-
-    Which can be used in an import or import_from node.
-    """
-    aliases = [import_alias(arg, None) for arg in args]
-    return aliases
-
-
 def import_statement(names: List[ast.alias]) -> ast.Import:
-    """Create an 'import' node.
+    """Create an ast.Import node.
 
     Example:
+        import_statement([ast.alias(name='x'), ast.alias(name='y')]) -> import x, y
 
-    import_statement([ast.alias(name='x'), ast.alias(name='y')])
-
-    Creates:
-
-    import x, y
+    Args:
+        names: A list of import alias nodes.
     """
     import_node = ast.Import(
         names=names,
@@ -162,20 +142,18 @@ def import_statement(names: List[ast.alias]) -> ast.Import:
 
 
 def import_from_statement(module: str, names: List[ast.alias], level: int=0) -> ast.ImportFrom:
-    """Create an 'import from' node.
-
-    level: Level of the relative import, where:
-        0: Absolute - from lib import x
-        1: One level - from .lib import x
-        2: Two levels - from ..lib import x
+    """Create an ast.ImportFrom node.
 
     Example:
+        import_from_statement('foo', [ast.alias(name='x'), ast.alias(name='y')], 0) -> from foo import x, y
 
-    import_from_statement('foo', [ast.alias(name='x'), ast.alias(name='y')], 0)
-
-    Creates:
-
-    from foo import x, y
+    Args:
+        module: The name of the module to import the requested "names" from. This should be None for statements such as from . import foo.
+        names: The list of import alias nodes.
+        level: The level of the import, where:
+            - 0: Absolute - from lib import x
+            - 1: One level - from .lib import x
+            - 2: Two levels - from ..lib import x
     """
     import_from_node = ast.ImportFrom(
         module=module,
@@ -186,7 +164,10 @@ def import_from_statement(module: str, names: List[ast.alias], level: int=0) -> 
 
 
 def create_import(names: List[str], from_module: str, *, level: int=0) -> Union[ast.ImportFrom, ast.Import]:
-    """Build an import statement for the given names.
+    """Build an ast.Import or ast.ImportFrom statement for the given names.
+
+    Example:
+        create_import(["foo"], "bar", level=1) -> from .foo import bar
     
     Args:
         names: The list of names to be imported.
@@ -203,20 +184,15 @@ def create_import(names: List[str], from_module: str, *, level: int=0) -> Union[
     return import_statement(aliases)
 
 
-def argument(name, annotation: Union[ast.Name, ast.Subscript]) -> ast.arg:
-    """Create an 'arg' node.
+def argument(name: str, annotation: Union[ast.Name, ast.Subscript]) -> ast.arg:
+    """Create an ast.arg node.
     
     Example:
+        argument('foo', ast.Name('int', ctx=ast.Load())) -> foo: int
 
-    argument('foo', ast.Name('int', ctx=ast.Load()))
-
-    Creates:
-
-    foo: int
-
-    For:
-
-    def bar(foo: int): ...
+    Args:
+        name: The name of the argument.
+        annotation: The annotation of the argument.
     """
     arg_node = ast.arg(
         arg=name,
@@ -225,21 +201,30 @@ def argument(name, annotation: Union[ast.Name, ast.Subscript]) -> ast.arg:
     return arg_node
 
 
-def function_call(function_name: str, arguments: List, keywords: List) -> ast.Call:
+def function_call(function_name: Union[str, ast.Name, ast.Attribute], arguments: List[Union[ast.Name, ast.Starred]], keywords: List[ast.keyword]) -> ast.Call:
+    """Create an ast.Call node.
+    
+    Args:
+        function_name: The name of the function.
+        arguments: A list of the arguments passed by position.
+        keywords: A list of the keyword arguments.
+    """
+    if isinstance(function_name, str):
+        function_name = name(value=function_name, ctx=ast.Load())
+
     node = ast.Call(
-        func=function_return_annotation(function_name), # Make Generic
+        func=function_name,
         args=arguments,
         keywords=keywords,
     )
     return node
 
 
-def constant(value) -> ast.Constant:
-    """Create a 'constant' node.
+def constant(value: Any) -> ast.Constant:
+    """Create an ast.Constant node.
     
-    The value attribute of the Constant literal contains the Python object it represents. 
-    The values represented can be simple types such as a number, string or None, but also immutable 
-    container types (tuples and frozensets) if all of their elements are constant.
+    Args:
+        value: The python object that the constant node represents.
     """
     arg_node = ast.Constant(
         value=value,
@@ -248,9 +233,11 @@ def constant(value) -> ast.Constant:
 
 
 def arguments(args: List[ast.arg], defaults: List[ast.Constant]) -> ast.arguments:
-    """
-    Args: List of `ast.arg` nodes. These are arguments that can be both positional or keyword.
-    Defaults: List of default arguments values, where List[-1] is the default value for the last argument.
+    """Create an ast.arguments node with positional arguments.
+
+    Args:
+        args: List of positional `ast.arg` nodes.
+        defaults: List of default arguments values, where List[-1] is the default value for the last argument.
     """
     args_node = ast.arguments(
         posonlyargs=[],
@@ -263,24 +250,32 @@ def arguments(args: List[ast.arg], defaults: List[ast.Constant]) -> ast.argument
     return args_node
 
 
-def function_return_annotation(value: str) -> ast.Name:
-    """
+def name(value: str, ctx: Union[ast.Load, ast.Store]=ast.Load) -> ast.Name:
+    """Create an ast.Name node.
+    
     Example:
+        name("sale_order_record", ast.Load) -> sale_order_record:
 
-    function_return_annotation("sale_order_record")
-
-    Creates:
-
-    -> sale_order_record:
+    Args:
+        value: The name as a string.
+        ctx: Either ast.Load or ast.Store.
     """
     node = ast.Name(
         id=value,
-        ctx=ast.Load(),
+        ctx=ctx,
     )
     return node
 
 
-def function_definition(function_name: str, args: ast.arguments, body: List, return_annotation: ast.Name):
+def function_definition(function_name: str, args: ast.arguments, body: List[ast.AST], return_annotation: ast.Name) -> ast.FunctionDef:
+    """Create a ast.FunctionDef node.
+    
+    Args:
+        function_name: The name of the function.
+        args: An arguments node representing the arguments to the function.
+        body: The list of nodes inside the function.
+        return_annotation: The return annotation of the function.
+    """
     node = ast.FunctionDef(
         name=function_name,
         args=args,
@@ -293,20 +288,16 @@ def function_definition(function_name: str, args: ast.arguments, body: List, ret
 
 
 def variable_assignment(var_name: str, value: ast.Constant) -> ast.Assign:
-    """
-    __modelname__ = "my.class"
+    """Create an ast.Assign node.
 
-    Becomes:
+    Example:
+        variable_assignment("__modelname__", constant("my.class")) -> __modelname__ = "my.class"
 
-    Assign(
-        targets=[
-            Name(id='__modelname__', ctx=Store())],
-        value=Constant(value='my.class')),
+    Args:
+        var_name: The name of the variable.
+        value: The value of the variable.
     """
-    name_node = ast.Name(
-        id=var_name,
-        ctx=ast.Store(),
-    )
+    name_node = name(var_name, ast.Store())
     node = ast.Assign(
         targets=[name_node],
         value=value,
@@ -314,18 +305,23 @@ def variable_assignment(var_name: str, value: ast.Constant) -> ast.Assign:
     return node
 
 
-def ellipsis_expression():
+def ellipsis_expression() -> ast.Expr:
+    """Create an ast.Expr node representing an ellipsis."""
     expr_node = ast.Expr(
         value=constant(...)
     )
     return expr_node
 
 
-def class_definition(class_name: str, base_class: str, body: List) -> ast.ClassDef:
-    bases = []
-    if base_class:
-        base_class = ast.Name(id=base_class, ctx=ast.Load())
-        bases.append(base_class)
+def class_definition(class_name: str, base_classes: List[str], body: List[ast.AST]) -> ast.ClassDef:
+    """Create an ast.ClassDef node.
+    
+    Args:
+        class_name: The name of the class.
+        base_class: The class that this class inherits.
+        body: The contents of the class.
+    """
+    bases = map(name, base_classes)
 
     node = ast.ClassDef(
         name=class_name,
@@ -338,15 +334,17 @@ def class_definition(class_name: str, base_class: str, body: List) -> ast.ClassD
 
 
 def variable_annotation(variable_name: str, type: str) -> ast.Expression:
-    """
+    """Create an ast.AnnAssign node.
+
     Example:
-
-    variable_annotation("order_lines", "[]")
-
-    order_lines: []
+        variable_annotation("order_lines", "[]") -> order_lines: []
+    
+    Args:
+        variable_name: The name of the variable.
+        type: The type of the annotation.
     """
-    var_node = ast.Name(id=variable_name, ctx=ast.Load())
-    annotation_node = ast.Name(id=type, ctx=ast.Load())
+    var_node = name(value=variable_name, ctx=ast.Load())
+    annotation_node = name(value=type, ctx=ast.Load())
 
     node = ast.AnnAssign(
         target=var_node,
@@ -357,36 +355,10 @@ def variable_annotation(variable_name: str, type: str) -> ast.Expression:
 
 
 def docstring(string: str) -> ast.Expr:
-    """
-    FunctionDef(
-        name='read',
-        args=arguments(
-            posonlyargs=[],
-            args=[
-                arg(arg='self'),
-                arg(arg='cr'),
-                arg(arg='uid'),
-                arg(
-                    arg='ids',
-                    annotation=Subscript(
-                        value=Name(id='List', ctx=Load()),
-                        slice=Name(id='int', ctx=Load()),
-                        ctx=Load())),
-                arg(arg='context'),
-                arg(arg='strfield')],
-            kwonlyargs=[],
-            kw_defaults=[],
-            defaults=[
-                Constant(value=None),
-                Constant(value='mystring')]),
-        body=[
-            Expr(
-                value=Constant(value='Arbitrary docstring.'))],
-        decorator_list=[],
-        returns=Subscript(
-            value=Name(id='List', ctx=Load()),
-            slice=Name(id='ReadRecord', ctx=Load()),
-            ctx=Load()))
+    """Create a docstring node.
+
+    Args:
+        string: The contents of the docstring.
     """    
     node = ast.Expr(
         value=constant(string),
@@ -395,7 +367,13 @@ def docstring(string: str) -> ast.Expr:
     return node
 
 
-def dictionary(keys: List, values: List) -> ast.Dict:
+def dictionary(keys: List[Union[ast.Constant, ast.Name]], values: List[Union[ast.Constant, ast.Name]]) -> ast.Dict:
+    """Create an ast.Dict node.
+    
+    Args:
+        keys: A list of nodes representing the keys in the dictionary.
+        values: A list of nodes representing the values in the dictionary.
+    """
     node = ast.Dict(
         keys=keys,
         values=values,
@@ -403,46 +381,20 @@ def dictionary(keys: List, values: List) -> ast.Dict:
     return node
 
 
-def infer_default(arg: dict):
-    if not arg["has_default"]:
-        return
-    try:
-        obj = ast.literal_eval(arg["default"])
-        return obj
-    except SyntaxError:
-        return arg["default"]
-
-
 def literal(variable_name: str, arguments: List[Union[str, bytes, int, None, Literal[False], Literal[True], bool]]) -> ast.Assign:
-    """
-    v = Literal['field1', 'field2', 'field3'...]
+    """Create an ast.Assign node which represents a typing.Literal assignment.
 
-    Creates:
+    Example:
+        literal("v", ["field1", "field2", "field3"]) -> v = Literal['field1', 'field2', 'field3']
 
-    Assign(
-        targets=[
-            Name(id='items', ctx=Store())],
-        value=Subscript(
-            value=Name(id='Literal', ctx=Load()),
-            slice=Tuple(
-                elts=[
-                    Constant(value='hello'),
-                    Constant(value='hi'),
-                    Constant(value='yes'),
-                    Constant(value='ok')],
-                ctx=Load()),
-            ctx=Load())),
+    Args:
+        variable_name: The name of the variable.
+        arguments: A list of arguments to the Literal.
     """
-    target_node = ast.Name(
-    id=make_fields_type_alias(variable_name),
-        ctx=ast.Store(),
-    )
+    target_node = name(value=make_fields_type_alias(variable_name), ctx=ast.Store())
     elt_nodes = [ast.Constant(value=a) for a in arguments]
     subscript_node = ast.Subscript(
-        value=ast.Name(
-            id='Literal',
-            ctx=ast.Load(),
-        ),
+        value=name(value='Literal', ctx=ast.Load()),
         slice=ast.Tuple(
             elts=elt_nodes,
             ctx=ast.Load(),
@@ -475,15 +427,81 @@ def get_fields_type_hint(model_name: str, method_name: str, argument_name: str) 
     return node
 
 
+def get_args_type_hint(model_name: str, method_name: str, argument_name: str) -> ast.arg:
+    """Generate the type hint for the "args" domain argument on "search" for a given model.
+    
+    This takes the form:
+        List[Union[SET_OPERATIONS, Tuple[fields_record_name, DOMAIN_OPERATORS, str]]]
+        
+    Args:
+        model_name: The name of the model.
+        method_name: The name of the method.
+        argument_name: The name of the argument.
+    """
+    fields_literal_name = make_fields_type_alias(make_read_model_classname(model_name))
+    
+    elt_nodes = [ast.Constant(value=a) for a in DOMAIN_OPERATORS]
+    domain_operators_literal = ast.Subscript(
+        value=name(value='Literal', ctx=ast.Load()),
+        slice=ast.Tuple(
+            elts=elt_nodes,
+            ctx=ast.Load(),
+        )
+    )
+
+    elt_nodes = [ast.Constant(value=a) for a in SET_OPERATIONS]
+    set_operations_literal = ast.Subscript(
+        value=name(value='Literal', ctx=ast.Load()),
+        slice=ast.Tuple(
+            elts=elt_nodes,
+            ctx=ast.Load(),
+        )
+    ) 
+    
+    domain_tuple = ast.Subscript(
+        value=name(value="Tuple"),
+        slice=ast.Tuple(
+            elts=[
+                name(value=fields_literal_name),
+                #name(value="DOMAIN_OPERATORS"),
+                domain_operators_literal,
+                name(value="Any"),
+            ],
+            ctx=ast.Load(),
+        )
+    )
+    union = ast.Subscript(
+        value=name("Union"),
+        slice=ast.Tuple(
+            elts=[
+                # name("SET_OPERATIONS"),
+                set_operations_literal,
+                domain_tuple
+            ]
+        ),
+        ctx=ast.Load(),
+    )
+    list = ast.Subscript(
+        name(value="List"),
+        slice=union,
+        ctx=ast.Load(),
+    )
+    expression = ast.Expr(
+        value=list,
+    )
+    node = argument(argument_name, annotation=expression)
+    return node
+
+
 BASE_TYPE_HINTS = {
     'read': {
-        'ids': 'Union[List[int], Literal[False]]',  # Compatible with an empty list.
+        'ids': 'Union[List[int], Literal[False]]',
         'context': 'Optional[Dict[str, Any]]',
         'load': 'Optional[str]',
         'fields': get_fields_type_hint,
     },
     'search': {
-        'args': 'List[Tuple[str, ...]]',
+        'args': get_args_type_hint, # 'List[Tuple[str, ...]]',  # TODO:  
         'offset': 'Optional[Union[int, Literal[False]]]',
         'limit': 'Optional[Union[int, Literal[False]]]',
         'order': 'Optional[Union[str, Literal[False]]]',
@@ -492,7 +510,7 @@ BASE_TYPE_HINTS = {
     },
     'write': {
         'ids': 'List[int]',
-        'vals': 'Dict[str, Any]',  # TODO: Type should be Dict[fields_model, Any]
+        'vals': 'Dict[str, Any]',  # TODO: Type should be Dict[fields_literal_options, Any]
         'context': 'Optional[Dict[str, Any]]',
     },
     'unlink': {
@@ -500,6 +518,21 @@ BASE_TYPE_HINTS = {
         'context': 'Optional[Dict[str, Any]]',
     }
 }
+
+
+def infer_default(arg: dict) -> Any:
+    """Infer the type of a default argument defined in the model metadata.
+    
+    Args:
+        arg: The model metadata node to evaluate.
+    """
+    if not arg["has_default"]:
+        return
+    try:
+        obj = ast.literal_eval(arg["default"])
+        return obj
+    except SyntaxError:
+        return arg["default"]
 
 
 def get_base_type_hint_node(method_name: str, argument_name: str) -> ast.arg:
@@ -617,6 +650,7 @@ class ModelMetadataToASTHandler:
         annotation_nodes = []
 
         for name, data in field_metadata.items():
+            # TODO: Instead, change the name of the field to "name_"
             # Skip field names that are python keywords.
             # Example: 'global' on ir_rule.
             if keyword.iskeyword(name):
@@ -763,12 +797,12 @@ class TableModel(Model):
         
         methods = self.model_metadata['methods']
         for method, method_metadata in methods.items():
-            if methods[method]["module"] == BASE_MODULE and method != "read":
+            if methods[method]["module"] == BASE_MODULE and method not in ("read", "search"):  # TODO: This shouldnt be hardcoded.
                 continue
             function_node = ModelMetadataToASTHandler.function_definition(self.model_name, method_metadata, method)
             body_nodes.append(function_node)
 
-        class_node = class_definition(self.class_name, 'BaseModel', body_nodes)
+        class_node = class_definition(self.class_name, ['BaseModel'], body_nodes)
         module_node = module([typing_import_node, import_node, base_import_node, class_node], [])
         new_tree = ast.fix_missing_locations(module_node)
         return new_tree
@@ -800,7 +834,7 @@ class RecordModel(Model):
         keys = fields.keys() if fields else [None]
         fields_definition = literal(self.record_name, keys)
         annotation_nodes = ModelMetadataToASTHandler.field_annotations(fields) if fields else [ellipsis_expression()]
-        class_node = class_definition(self.record_name, "TypedDict", annotation_nodes)
+        class_node = class_definition(self.record_name, ["TypedDict"], annotation_nodes)
         module_node = module([typing_import_node, fields_definition, class_node], [])
         new_tree = ast.fix_missing_locations(module_node)
         return new_tree
@@ -829,7 +863,7 @@ class BaseModel(Model):
             function_node = ModelMetadataToASTHandler.function_definition(self.model_name, method_metadata, method)
             function_nodes.append(function_node)
 
-        class_node = class_definition(self.model_name, None, function_nodes)
+        class_node = class_definition(self.model_name, [], function_nodes)
         module_node = module([class_node], [])
         new_tree = ast.fix_missing_locations(module_node)
         return new_tree
@@ -860,7 +894,7 @@ class TypedZERPModel(Model):
         var_node = constant("TypedZERP")
         dict_node = dictionary(
             keys=map(constant, table_to_model_names.keys()),
-            values=map(function_return_annotation, table_to_model_names.values())  # update function_return_annotation to generic name.
+            values=map(name, table_to_model_names.values())
         )
         function_call_node = function_call("TypedDict", [var_node, dict_node], [])
         variable_node = variable_assignment("TypedZERP", value=function_call_node)
@@ -932,3 +966,7 @@ def main():
         return run()
     else:
         return show_help()
+    
+
+if __name__ == "__main__":
+    print(ast.dump(get_args_type_hint("sale.order", "search", "args"), indent=3))
