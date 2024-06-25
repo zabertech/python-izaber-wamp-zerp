@@ -16,8 +16,7 @@ setup(
     scripts=[],
     entry_points={
         'console_scripts': [
-            'wampcli = izaber_wamp_zerp.wampcli:run_main',
-            'zerp = izaber_wamp_zerp.generate_types:main',
+            'wampcli = izaber_wamp_zerp.wampcli:run_main'
         ],
     },
     install_requires=[
