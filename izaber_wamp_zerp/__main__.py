@@ -27,7 +27,7 @@ class Command(str, Enum):
 
 
 def main():
-    """Entry point for the `zerp` command line utility."""
+    """Entry point for the `izaber_wamp_zerp` command line utility."""
     if not len(sys.argv) > 1:
         return show_help()
     elif sys.argv[1] == Command.HELP:
