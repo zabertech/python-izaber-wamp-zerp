@@ -69,7 +69,6 @@ BASE_ARGS = [
     'user',
 ]
 
-# List[Union[Literal["&", "|", "!"], Tuple[fields_record_name, Literal["=", "!=", ">", ">=", "<", "<=", "like", "ilike", "in", "not in", "child_of", "parent_left", "parent_right"], str]]]
 
 DOMAIN_OPERATORS = ["=", "!=", ">", ">=", "<", "<=", "like", "ilike", "in", "not in", "child_of", "parent_left", "parent_right"]
 
@@ -934,38 +933,6 @@ def run():
 
     display.exit()
 
-
-def show_help():
-    help = """
-    Usage: zerp [command]
-
-    ZERP command line utilities. Generate ZERP types on your local machine that provide type hints
-    to the izaber_wamp_zerp library. Requires Python >= 3.8.
-    
-    Commands:
-      help       Display this help message.
-      generate   Generate a new set of ZERP types.
-    """
-    return textwrap.dedent(help)
-
-
-class Command(str, Enum):
-    """Valid commands accepted by the `zerp` command line utility."""
-
-    HELP = "help"
-    GENERATE = "generate"
-
-
-def main():
-    """Entry point for the `zerp` command line utility."""
-    if not len(sys.argv) > 1:
-        return show_help()
-    elif sys.argv[1] == Command.HELP:
-        return show_help()
-    elif sys.argv[1] == Command.GENERATE:
-        return run()
-    else:
-        return show_help()
     
 
 if __name__ == "__main__":
