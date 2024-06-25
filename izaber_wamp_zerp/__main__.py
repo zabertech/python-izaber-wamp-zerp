@@ -20,7 +20,7 @@ def show_help():
 
 
 class Command(str, Enum):
-    """Valid commands accepted by the `zerp` command line utility."""
+    """Valid commands accepted by the `izaber_wamp_zerp` command line utility."""
 
     HELP = "help"
     GENERATE = "generate-types"
