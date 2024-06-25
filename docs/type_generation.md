@@ -4,7 +4,7 @@ A utility script is provided which allows you to generate ZERP types locally on 
 
 ## Setup
 
-The only requirement for executing this script is to have a valid WAMP connection defined in your `~/izaber.yaml` file.
+The only requirement for executing this script is to have a valid WAMP connection defined in your `~/izaber.yaml` file or exposed as an environment variable.
 
 ## Quick Start
 
