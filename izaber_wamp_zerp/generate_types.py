@@ -4,13 +4,10 @@ import json
 import keyword
 import lzma
 import os
-import sys
-import textwrap
 
 from abc import ABC, abstractmethod
-from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, TypedDict, Union
+from typing import Any, Dict, List, Literal, Optional, Type, TypedDict, Union, cast
 
 from izaber import initialize
 from izaber_wamp_zerp import zerp
@@ -176,14 +173,14 @@ def create_import(names: List[str], from_module: str, *, level: int=0) -> Union[
     Returns:
         Union[ast.ImportFrom, ast.Import]: An `ast.ImportFrom` node if `from_module` is specified, otherwise an `ast.Import` node.
     """
-    aliases = map(import_alias, names)
+    aliases = list(map(import_alias, names))
 
     if from_module:
         return import_from_statement(from_module, aliases, level=level)
     return import_statement(aliases)
 
 
-def argument(name: str, annotation: Union[ast.Name, ast.Subscript]) -> ast.arg:
+def argument(name: str, annotation: Union[ast.Name, ast.Subscript, ast.Expr, None]) -> ast.arg:
     """Create an ast.arg node.
     
     Example:
@@ -200,7 +197,7 @@ def argument(name: str, annotation: Union[ast.Name, ast.Subscript]) -> ast.arg:
     return arg_node
 
 
-def function_call(function_name: Union[str, ast.Name, ast.Attribute], arguments: List[Union[ast.Name, ast.Starred]], keywords: List[ast.keyword]) -> ast.Call:
+def function_call(function_name: Union[str, ast.Name, ast.Attribute], arguments: List[Union[ast.Constant, ast.Dict, ast.Name, ast.Starred]], keywords: List[ast.keyword]) -> ast.Call:
     """Create an ast.Call node.
     
     Args:
@@ -249,7 +246,7 @@ def arguments(args: List[ast.arg], defaults: List[ast.Constant]) -> ast.argument
     return args_node
 
 
-def name(value: str, ctx: Union[ast.Load, ast.Store]=ast.Load) -> ast.Name:
+def name(value: str, ctx: Union[ast.Load, ast.Store]=ast.Load()) -> ast.Name:
     """Create an ast.Name node.
     
     Example:
@@ -266,7 +263,7 @@ def name(value: str, ctx: Union[ast.Load, ast.Store]=ast.Load) -> ast.Name:
     return node
 
 
-def function_definition(function_name: str, args: ast.arguments, body: List[ast.AST], return_annotation: ast.Name) -> ast.FunctionDef:
+def function_definition(function_name: str, args: ast.arguments, body: List[ast.Expr], return_annotation: Union[ast.Name, ast.Subscript, None]=None) -> ast.FunctionDef:
     """Create a ast.FunctionDef node.
     
     Args:
@@ -286,7 +283,7 @@ def function_definition(function_name: str, args: ast.arguments, body: List[ast.
     return node
 
 
-def variable_assignment(var_name: str, value: ast.Constant) -> ast.Assign:
+def variable_assignment(var_name: str, value: Union[ast.Call, ast.Constant]) -> ast.Assign:
     """Create an ast.Assign node.
 
     Example:
@@ -312,7 +309,7 @@ def ellipsis_expression() -> ast.Expr:
     return expr_node
 
 
-def class_definition(class_name: str, base_classes: List[str], body: List[ast.AST]) -> ast.ClassDef:
+def class_definition(class_name: str, base_classes: List[str], body: List[Union[ast.AnnAssign, ast.Expr, ast.Assign, ast.FunctionDef]]) -> ast.ClassDef:
     """Create an ast.ClassDef node.
     
     Args:
@@ -332,7 +329,7 @@ def class_definition(class_name: str, base_classes: List[str], body: List[ast.AS
     return node
 
 
-def variable_annotation(variable_name: str, type: str) -> ast.Expression:
+def variable_annotation(variable_name: str, type: str) -> ast.AnnAssign:
     """Create an ast.AnnAssign node.
 
     Example:
@@ -438,7 +435,7 @@ def get_args_type_hint(model_name: str, method_name: str, argument_name: str) ->
         argument_name: The name of the argument.
     """
     fields_literal_name = make_fields_type_alias(make_read_model_classname(model_name))
-    
+    # TODO: cleanup
     elt_nodes = [ast.Constant(value=a) for a in DOMAIN_OPERATORS]
     domain_operators_literal = ast.Subscript(
         value=name(value='Literal', ctx=ast.Load()),
@@ -462,7 +459,6 @@ def get_args_type_hint(model_name: str, method_name: str, argument_name: str) ->
         slice=ast.Tuple(
             elts=[
                 name(value=fields_literal_name),
-                #name(value="DOMAIN_OPERATORS"),
                 domain_operators_literal,
                 name(value="Any"),
             ],
@@ -473,7 +469,6 @@ def get_args_type_hint(model_name: str, method_name: str, argument_name: str) ->
         value=name("Union"),
         slice=ast.Tuple(
             elts=[
-                # name("SET_OPERATIONS"),
                 set_operations_literal,
                 domain_tuple
             ]
@@ -492,7 +487,37 @@ def get_args_type_hint(model_name: str, method_name: str, argument_name: str) ->
     return node
 
 
-BASE_TYPE_HINTS = {
+def get_vals_type_hint(model_name: str, method_name: str, argument_name: str) -> ast.arg:
+    """Generate the type hint for the "vals" argument on "write".
+    
+    This takes the form:
+        Dict[Literal[field, ...,], Any]
+        
+    Args:
+        model_name: The name of the model.
+        method_name: The name of the method.
+        argument_name: The name of the argument.
+    """
+    fields_literal_name = make_fields_type_alias(make_read_model_classname(model_name))
+
+    # TODO: Cleanup
+    dict_tuple = ast.Subscript(
+        value=name(value="Dict"),
+        slice=ast.Tuple(
+            elts=[
+                name(value=fields_literal_name),
+                name(value="Any"),
+            ],
+            ctx=ast.Load(),
+        )
+    )
+    expression = ast.Expr(
+        value=dict_tuple,
+    )
+    node = argument(argument_name, annotation=expression)
+    return node
+
+BASE_TYPE_HINTS: Dict[str, Dict[str, Any]] = {
     'read': {
         'ids': 'Union[List[int], Literal[False]]',
         'context': 'Optional[Dict[str, Any]]',
@@ -500,7 +525,7 @@ BASE_TYPE_HINTS = {
         'fields': get_fields_type_hint,
     },
     'search': {
-        'args': get_args_type_hint, # 'List[Tuple[str, ...]]',  # TODO:  
+        'args': get_args_type_hint,
         'offset': 'Optional[Union[int, Literal[False]]]',
         'limit': 'Optional[Union[int, Literal[False]]]',
         'order': 'Optional[Union[str, Literal[False]]]',
@@ -509,7 +534,7 @@ BASE_TYPE_HINTS = {
     },
     'write': {
         'ids': 'List[int]',
-        'vals': 'Dict[str, Any]',  # TODO: Type should be Dict[fields_literal_options, Any]
+        'vals': get_vals_type_hint,  # TODO: Type should be Dict[fields_literal_options, Any]
         'context': 'Optional[Dict[str, Any]]',
     },
     'unlink': {
@@ -543,7 +568,8 @@ def get_base_type_hint_node(method_name: str, argument_name: str) -> ast.arg:
     """
     hint = BASE_TYPE_HINTS[method_name][argument_name]
     tree = ast.parse(hint)
-    node = tree.body[0].value
+    expr = cast(ast.Expr, tree.body[0])
+    node = cast(ast.Subscript, expr.value)
     arg_node = argument(argument_name, node)
     return arg_node
 
@@ -582,7 +608,7 @@ class Field(TypedDict):
 
 class ModelMetadataToASTHandler:
     @classmethod
-    def function_arguments(cls, method_metadata: dict, model_name: str, method_name: str) -> List[ast.arg]:
+    def function_arguments(cls, method_metadata: dict, model_name: str, method_name: str) -> ast.arguments:
         """Translate a method defined in model metadata to an ast.arguments node.
         
         Args:
@@ -608,7 +634,7 @@ class ModelMetadataToASTHandler:
         return arguments(arg_nodes, default_nodes)
 
     @classmethod
-    def docstring(cls, method_metadata: dict) -> ast.Expr:
+    def docstring(cls, method_metadata: dict) -> Union[ast.Expr, None]:
         if not (method_metadata["doc"] and isinstance(method_metadata["doc"], list)):
             return None
         # Select an arbitrary docstring from the inheritance chain.
@@ -634,13 +660,13 @@ class ModelMetadataToASTHandler:
         if docstring_node:
             function_body.append(docstring_node)
         function_body.append(ellipsis_expression())
-        returns = []
+        returns = None
         if method_name == "read":
             returns = list_annotation(make_read_model_classname(model_name))
         return function_definition(method_name, args_node, function_body, returns)
     
     @classmethod
-    def field_annotations(cls, field_metadata: Dict[str, Field]) -> List[ast.Expression]:
+    def field_annotations(cls, field_metadata: Dict[str, Field]) -> List[ast.AnnAssign]:
         """Construct type annotations for each of the fields available on a model.
         
         Args:
@@ -657,6 +683,7 @@ class ModelMetadataToASTHandler:
             python_type = Z2P_TYPES[data['type']]
             node = variable_annotation(name, python_type)
             annotation_nodes.append(node)
+
         return annotation_nodes
 
 
@@ -750,7 +777,7 @@ class Model(ABC):
         self.record_name = make_read_model_classname(self.model_name)
     
     @abstractmethod
-    def generate_ast(self) -> ast.Module:
+    def generate_ast(self) -> Union[ast.Module, None]:
         """Generate an Abstract Syntax Tree (AST) for the model."""
         ...
     
@@ -769,7 +796,7 @@ class Model(ABC):
 class TableModel(Model):
     """Represents the method signatures available on a particular model."""
 
-    def generate_ast(self) -> ast.Module:
+    def generate_ast(self) -> Union[ast.Module, None]:
         """Generate an AST module tree representing the method signatures of the model.
         
         Returns:
@@ -778,7 +805,7 @@ class TableModel(Model):
         if not self.model_metadata['methods']:
             return None
 
-        body_nodes = []
+        body_nodes: List[Union[ast.AnnAssign, ast.Expr, ast.Assign, ast.FunctionDef]] = []
 
         field_name = make_fields_type_alias(self.record_name) 
         import_node = create_import([self.record_name, field_name], self.record_name, level=1)
@@ -815,7 +842,7 @@ class TableModel(Model):
 class RecordModel(Model):
     """A TypedDict representing the columns, and their types, available on each model."""
 
-    def generate_ast(self) -> ast.Module:
+    def generate_ast(self) -> Union[ast.Module, None]:
         """Generate the AST describing a models columns.
 
         Generate an AST module node of a TypedDict class containing the names and type
@@ -824,6 +851,8 @@ class RecordModel(Model):
         Returns:
             ast.Module: An AST module node representing the TypedDict class for the model.
         """
+        annotation_nodes: List[Union[ast.AnnAssign, ast.Expr, ast.Assign, ast.FunctionDef]] = []
+
         fields = self.model_metadata["fields"]
         typing_import_node = create_import(
             ["Any", "Dict", "List", "Literal", "Optional", "Tuple", "Union", "TypedDict"],
@@ -832,7 +861,10 @@ class RecordModel(Model):
         )
         keys = fields.keys() if fields else [None]
         fields_definition = literal(self.record_name, keys)
-        annotation_nodes = ModelMetadataToASTHandler.field_annotations(fields) if fields else [ellipsis_expression()]
+        if fields:
+            annotation_nodes.extend(ModelMetadataToASTHandler.field_annotations(fields))
+        else:
+            annotation_nodes.append(ellipsis_expression())
         class_node = class_definition(self.record_name, ["TypedDict"], annotation_nodes)
         module_node = module([typing_import_node, fields_definition, class_node], [])
         new_tree = ast.fix_missing_locations(module_node)
@@ -847,13 +879,13 @@ class RecordModel(Model):
 class BaseModel(Model):
     """Represents the base ORM methods available to each model."""
 
-    def generate_ast(self) -> ast.Module:
+    def generate_ast(self) -> Union[ast.Module, None]:
         """Generate an AST describing the base methods available on the ORM.
 
         Returns:
             ast.Module: An AST module node representing the BaseModel.
         """
-        function_nodes = []
+        function_nodes: List[Union[ast.AnnAssign, ast.Expr, ast.Assign, ast.FunctionDef]] = []
 
         methods = self.model_metadata["methods"]
         for method, method_metadata in methods.items():
@@ -875,7 +907,7 @@ class BaseModel(Model):
 class TypedZERPModel(Model):
     """Represents a TypedDict for providing type hints to the `zerp` singleton."""
 
-    def generate_ast(self) -> ast.Module:
+    def generate_ast(self) -> Union[ast.Module, None]:
         """Generate the AST for the TypedZERP class providing type hints to the `zerp` singleton.
         
         Returns:
@@ -892,8 +924,8 @@ class TypedZERPModel(Model):
 
         var_node = constant("TypedZERP")
         dict_node = dictionary(
-            keys=map(constant, table_to_model_names.keys()),
-            values=map(name, table_to_model_names.values())
+            keys=list(map(constant, table_to_model_names.keys())),
+            values=list(map(name, table_to_model_names.values())),
         )
         function_call_node = function_call("TypedDict", [var_node, dict_node], [])
         variable_node = variable_assignment("TypedZERP", value=function_call_node)
@@ -906,34 +938,26 @@ class TypedZERPModel(Model):
         return write_model(tree, model_type_hint_path)
 
 
-def run():
+def run() -> None:
     """Run the model generation."""
     model_metadata = get_all_model_metadata()
     display = Display(len(model_metadata))
 
     # Create the base model.
-    model = BaseModel("BaseModel", model_metadata["ir.model"])
-    model.create()
+    BaseModel("BaseModel", model_metadata["ir.model"]).create()
 
-    type_models: List[Model] = [TableModel, RecordModel]
+    type_models: List[Type[Model]] = [TableModel, RecordModel]
 
     for model_name, metadata in model_metadata.items():
         if not metadata:
             continue
 
         for type_model in type_models:
-            model = type_model(model_name, metadata)
-            model.create()
+            type_model(model_name, metadata).create()
         
         display.out(model_name)
     
     # Create the TypedZERP model.
-    model = TypedZERPModel("TypedZERPModel", model_metadata)
-    model.create()
+    TypedZERPModel("TypedZERPModel", model_metadata).create()
 
     display.exit()
-
-    
-
-if __name__ == "__main__":
-    print(ast.dump(get_args_type_hint("sale.order", "search", "args"), indent=3))
