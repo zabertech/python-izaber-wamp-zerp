@@ -1324,7 +1324,7 @@ class DisplayHandler:
         print(summary)
 
 
-def run(fail_on_error: bool = False) -> None:
+def run(ignore_errors: bool = False) -> None:
     """Run the model generation.
 
     Args:
@@ -1346,13 +1346,13 @@ def run(fail_on_error: bool = False) -> None:
                 for type_model in type_models:
                     type_model(model_name, metadata).create()
             except:  # noqa: E722
-                if fail_on_error:
+                if not ignore_errors:
                     raise
                 handler.error(model_name)
             else:
                 handler.success(model_name)
 
-        # Create the TypedZERP model using the models that were successfully generated.
+        # Create the TypedZERP model using only the models that were successfully generated.
         filtered_model_metadata = {model: model_metadata[model] for model in handler.successes}
         TypedZERPModel("TypedZERPModel", filtered_model_metadata).create()
 

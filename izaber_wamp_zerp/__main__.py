@@ -24,7 +24,7 @@ class Command(str, Enum):
 
     HELP = "help"
     GENERATE = "generate-types"
-    FAIL_ON_ERROR = "--fail-on-error"
+    IGNORE_ERRORS = "--ignore-errors"
 
 
 def initialize_parse() -> argparse.ArgumentParser:
@@ -35,9 +35,9 @@ def initialize_parse() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", help="Generate ZERP types on your local machine that provide type hints to the izaber_wamp_zerp library. Requires Python >= 3.8.")
     parser_generate_types = subparsers.add_parser(Command.GENERATE.value)
     parser_generate_types.add_argument(
-        "--fail-on-error",
+        Command.IGNORE_ERRORS.value,
         action="store_true",
-        help="fail gracelessly when a model generation error is encountered"
+        help="suppress any errors that occur and continue generating"
     )
     return parser
 
@@ -47,16 +47,8 @@ def main():
     parser = initialize_parse()
     args = parser.parse_args()
     if args.command == Command.GENERATE:
-        return run(args.fail_on_error)
+        return run(args.ignore_errors)
 
-    # if not len(sys.argv) > 1:
-    #     return show_help()
-    # elif sys.argv[1] == Command.HELP:
-    #     return show_help()
-    # elif sys.argv[1] == Command.GENERATE:
-    #     return run()
-    # else:
-    #     return show_help()
     
 
 if __name__ == "__main__":
