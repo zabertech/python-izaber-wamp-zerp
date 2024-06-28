@@ -11,6 +11,7 @@ twine = "*"
 
 [packages]
 izaber-wamp = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3"

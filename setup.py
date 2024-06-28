@@ -24,6 +24,7 @@ setup(
         'izaber_wamp',
         'docopt',
         'swampyer>=1.20190905',
+        'tqdm',
     ],
     dependency_links=[
     ],
