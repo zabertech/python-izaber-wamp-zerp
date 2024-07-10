@@ -17,8 +17,20 @@ python3 -m izaber_wamp_zerp generate-types
 The type generation was successful if you see output similar to the following in your console.
 
 ```bash
-Loading: zerp.zeno.document.control.variant                 [732/865]
-732/865 models successfully loaded.
+Generating models: 100%|██████████| 865/865
+
+865/865 models successfully generated.
+- 133/865 stale models ignored.
+- 0/865 models failed to generate.
+
 ```
 
 After successful installation, interacting with the `zerp` object should provide type-hints to your tools. See [Interacting with ZERP](./usage_in_scripts.md) for more information.
+
+
+
+In order to suppress and continue past model generation errors, use the `--ignore-errors` flag:
+
+```bash
+python3 -m izaber_wamp_zerp generate-types --ignore-errors
+```
