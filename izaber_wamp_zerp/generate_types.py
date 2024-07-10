@@ -67,6 +67,7 @@ BASE_FUNCTIONS = [
     "write",
     "unlink",
     "search",
+    "search_fetch",
 ]
 
 
@@ -742,6 +743,18 @@ BASE_TYPE_HINTS: Dict[str, Union[List[Dict[str, Any]], Dict[str, Any]]] = {
         },
         "returns": None,
     },
+    "search_fetch": {
+        "arguments": {
+            "args": SearchArgsNode,
+            "fields": ReadFieldsNode,
+            "offset": "Optional[Union[int, Literal[False]]]",
+            "limit": "Optional[Union[int, Literal[False]]]",
+            "order": "Optional[Union[str, Literal[False]]]",
+            "context": "Optional[Dict[str, Any]]",
+            "count": "Optional[int]",
+        },
+        "returns": ReadReturnsRecordListNode,
+    }
 }
 
 
@@ -828,7 +841,7 @@ def get_argument_annotation_node(
     elif isinstance(val, str) and arg_name:
         node = get_base_type_hint_node(val, arg_name)
     elif arg_name:
-        node = argument(arg_name, annotation=None)
+        node = argument(arg_name, annotation=name("Any", ctx=ast.Load()))
     else:
         raise TypeError(f"invalid annotation specified for {model_name}.{method_name}")
 
@@ -845,7 +858,7 @@ def get_return_annotation_node(
     Args:
     """
     if model_name == "BaseModel":
-        return None
+        return name("Any", ctx=ast.Load())
 
     if overload_position is not None:
         val = BASE_TYPE_HINTS[method_name][overload_position]["returns"]
@@ -853,10 +866,12 @@ def get_return_annotation_node(
         try:
             val = BASE_TYPE_HINTS[method_name]["returns"]
         except KeyError:
-            return None
+            return name("Any", ctx=ast.Load())
+            # return None
 
     if not val:
-        return None
+        return name("Any", ctx=ast.Load())
+        # return None
 
     if isinstance(val, type) and issubclass(val, BaseReturnNode):
         node = val.get(model_name, method_name)
@@ -1205,6 +1220,7 @@ class BaseModel(Model):
         """
         function_nodes: List[Union[ast.AnnAssign, ast.Expr, ast.Assign, ast.FunctionDef]] = []
 
+        typing_import_node = create_import(["Any"], "typing", level=0)
         methods = self.model_metadata["methods"]
         for method, method_metadata in methods.items():
             if method_metadata["module"] != BASE_MODULE:
@@ -1215,7 +1231,7 @@ class BaseModel(Model):
             function_nodes.append(function_node)
 
         class_node = class_definition(self.model_name, [], function_nodes)
-        module_node = module([class_node], [])
+        module_node = module([typing_import_node, class_node], [])
         new_tree = ast.fix_missing_locations(module_node)
         return new_tree
 
@@ -1236,10 +1252,8 @@ class TypedZERPModel(Model):
         table_to_model_names = {
             t: make_model_classname(t) for t in self.model_metadata if self.model_metadata[t]
         }
-
-        import_nodes = []
-
         # Setup the imports.
+        import_nodes = []
         import_nodes.append(create_import(["TypedDict"], "typing", level=0))
         for model_name in table_to_model_names.values():
             import_nodes.append(create_import([model_name], model_name, level=1))
