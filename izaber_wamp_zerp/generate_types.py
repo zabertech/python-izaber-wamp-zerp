@@ -429,28 +429,38 @@ def dictionary(
     return node
 
 
-def literal(
+def literal_annotation(elements: List[ast.Constant]) -> ast.Subscript:
+    """Construct an ast.Subscript node representing a literal annotation.
+
+    Args:
+        elements: The list of elements inside the Literal.
+    """
+    node = ast.Subscript(
+        value=name(value="Literal", ctx=ast.Load()),
+        slice=ast.Tuple(
+            elts=elements,
+            ctx=ast.Load(),
+        ),
+    )
+    return node
+
+
+def fields_literal(
     variable_name: str,
     arguments: List[Union[str, bytes, int, None, bool, float]],
 ) -> ast.Assign:
     """Create an ast.Assign node representing a typing.Literal assignment.
 
     Example:
-        literal("v", ["field1", "field2", "field3"]) -> v = Literal['field1', 'field2', 'field3']
+        fields_literal("v", ["field1", "field2", "field3"]) -> v = Literal['field1', 'field2', 'field3']
 
     Args:
         variable_name: The name of the variable.
         arguments: A list of arguments to the Literal.
     """
     target_node = name(value=make_fields_type_alias(variable_name), ctx=ast.Store())
-    elt_nodes = [ast.Constant(value=a) for a in arguments]
-    subscript_node = ast.Subscript(
-        value=name(value="Literal", ctx=ast.Load()),
-        slice=ast.Tuple(
-            elts=elt_nodes,
-            ctx=ast.Load(),
-        ),
-    )
+    element_nodes = [constant(a) for a in arguments]
+    subscript_node = literal_annotation(element_nodes)
     node = ast.Assign(
         targets=[target_node],
         value=subscript_node,
@@ -532,25 +542,8 @@ class SearchArgsNode(BaseArgumentNode):
     @classmethod
     def get(cls, model_name: str, method_name: str, argument_name: str) -> ast.arg:
         fields_literal_name = make_fields_type_alias(make_read_model_classname(model_name))
-        # TODO: cleanup
-        elt_nodes = [ast.Constant(value=a) for a in DOMAIN_OPERATORS]
-        domain_operators_literal = ast.Subscript(
-            value=name(value="Literal", ctx=ast.Load()),
-            slice=ast.Tuple(
-                elts=elt_nodes,
-                ctx=ast.Load(),
-            ),
-        )
-
-        elt_nodes = [ast.Constant(value=a) for a in SET_OPERATIONS]
-        set_operations_literal = ast.Subscript(
-            value=name(value="Literal", ctx=ast.Load()),
-            slice=ast.Tuple(
-                elts=elt_nodes,
-                ctx=ast.Load(),
-            ),
-        )
-
+        domain_operators_literal = literal_annotation([constant(a) for a in DOMAIN_OPERATORS])
+        set_operations_literal = literal_annotation([constant(a) for a in SET_OPERATIONS])
         domain_tuple = ast.Subscript(
             value=name(value="Tuple"),
             slice=ast.Tuple(
@@ -591,7 +584,6 @@ class WriteValsNode(BaseArgumentNode):
     def get(cls, model_name: str, method_name: str, argument_name: str) -> ast.arg:
         fields_literal_name = make_fields_type_alias(make_read_model_classname(model_name))
 
-        # TODO: Cleanup
         dict_tuple = ast.Subscript(
             value=name(value="Dict"),
             slice=ast.Tuple(
@@ -692,8 +684,6 @@ def construct_ast_node_from_string(
     value: str,
 ) -> Union[ast.Constant, ast.Subscript, ast.Name, ast.expr]:
     """Attempt to construct an AST node from a string representation of a type.
-
-    # TODO: Cleanup
 
     Args:
         value: The string representation of a type.
@@ -897,7 +887,6 @@ class ModelMetadataToASTHandler:
         annotation_nodes = []
 
         for name, data in field_metadata.items():
-            # TODO: Suffix the field name with "_"
             # Skip field names that are python keywords.
             # Example: 'global' on ir_rule.
             if keyword.iskeyword(name):
@@ -1066,7 +1055,6 @@ class TableModel(Model):
 
         field_name = make_fields_type_alias(self.record_name)
         import_node = create_import([self.record_name, field_name], self.record_name, level=1)
-        # TODO: `BaseModel` constant.
         base_import_node = create_import([BASE_MODEL_NAME], "base", level=1)
         typing_import_node = create_import(
             [
@@ -1132,7 +1120,7 @@ class RecordModel(Model):
             level=0,
         )
         keys = fields.keys() if fields else [None]
-        fields_definition = literal(self.record_name, keys)
+        fields_definition = fields_literal(self.record_name, keys)
         if fields:
             annotation_nodes.extend(ModelMetadataToASTHandler.field_annotations(fields))
         else:
