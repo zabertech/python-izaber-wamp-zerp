@@ -11,8 +11,7 @@ setup(
     author='Aki Mimoto',
     author_email='aki+izaber@zaber.com',
     license='MIT',
-    packages=['izaber_wamp_zerp'],
-    package_data={"": ["*.pyi", "**/*.pyi", "**/**/*.pyi"]},
+    package_dir={"": "izaber_wamp_zerp"},
     scripts=[],
     entry_points={
         'console_scripts': [
