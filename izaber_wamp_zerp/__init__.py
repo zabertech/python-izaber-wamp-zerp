@@ -10,6 +10,8 @@ from izaber import config, app_config
 from izaber.startup import request_initialize, initializer
 from izaber.wamp import wamp
 
+from .models.zerp import TypedZERP
+
 __version__ = '2.7.20200424'
 
 CONFIG_BASE = """
@@ -19,7 +21,7 @@ default:
             database: 'databasename'
 """
 
-zerp = ZERP()
+zerp: TypedZERP = ZERP()
 
 @initializer('wamp_zerp')
 def load_config(**kwargs):
