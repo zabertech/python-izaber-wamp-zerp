@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-from setuptools import setup
+from setuptools import setup, find_packages
+
 
 setup(
     name='izaber_wamp_zerp',
@@ -11,7 +12,7 @@ setup(
     author='Aki Mimoto',
     author_email='aki+izaber@zaber.com',
     license='MIT',
-    package_dir={"": "izaber_wamp_zerp"},
+    packages=find_packages(),
     scripts=[],
     entry_points={
         'console_scripts': [
@@ -25,7 +26,4 @@ setup(
         'swampyer>=1.20190905',
         'tqdm',
     ],
-    dependency_links=[
-    ],
-    zip_safe=False,
 )
