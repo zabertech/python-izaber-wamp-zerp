@@ -10,4 +10,5 @@
   - Added tox tests for pypy3,py27,py36,py38,py39
   - Rolled into Pipenv format
 
-
+2.8.20240726
+  - Add type hint support for ZERP models.

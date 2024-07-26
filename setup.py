@@ -5,10 +5,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='izaber_wamp_zerp',
-    version='2.7.20201015',
+    version='2.8.20240726',
     description='Base load point for iZaber WAMP ZERP code',
     url = 'https://github.com/zabertech/python-izaber-wamp-zerp',
-    download_url = 'https://github.com/zabertech/python-izaber-wamp-zerp/archive/2.7.20200424.tar.gz',
+    download_url = 'https://github.com/zabertech/python-izaber-wamp-zerp/archive/2.8.20240726.tar.gz',
     author='Aki Mimoto',
     author_email='aki+izaber@zaber.com',
     license='MIT',
