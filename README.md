@@ -42,3 +42,45 @@ The module reads all of its settings from a globally defined configuration file 
 - [Using izaber-wamp-zerp in python scripts](docs/usage_in_scripts.md)
 - [Running simple commands on the command line using WAMP CLI](docs/wampcli_usage.md)
 - [Generating ZERP types locally on your system](docs/type_generation.md)
+
+
+## Development
+
+For hacking on the code, this requires the following:
+
+- `git`
+- `>=python3.8`
+- [pdm](https://pdm-project.org/en/latest/)
+
+### Setup
+
+```bash
+git clone git@gitlab.izaber.com:systems/izaber-wamp-zerp.git
+cd izaber-wamp-zerp
+pdm install
+```
+
+And now it's possible to make changes to the code
+
+### Tests via Docker
+
+It's not always desireable to pollute the environment with multiple versions of python so using docker compose is the recommend method for testing.
+
+```bash
+docker compose up
+docker compose logs -f src
+```
+
+If you would like to work within the container, have a look at the `docker-compose.yml` and update the `CMD` to `sleep infinity` and it will provide a shell environment (via something like `docker compose exec src bash`) for testing the code within a container.
+
+### Packaging
+
+- Ensure that the `pyproject.toml` has the newest version.
+- Update the `VERSIONS.md` with the changes made into the library
+- Then, assuming access to the pypi account.
+    ```bash
+    pdm build
+    pdm publish
+    ```
+
+

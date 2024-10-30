@@ -1,0 +1,31 @@
+[project]
+name = "izaber_wamp_zerp"
+version = "2.8.20240726"
+description = "Base load point for iZaber WAMP ZERP code"
+readme = "README.md"
+authors = [{name = "Aki Mimoto", email = "aki+izaber@zaber.com"}]
+license = {text = "MIT"}
+requires-python = ">=3.8.0,<4.0"
+dependencies = [
+    "pytz",
+    "izaber-wamp",
+    "docopt",
+    "swampyer>=1.20190905",
+    "tqdm"
+]
+
+[project.urls]
+Homepage = "https://github.com/zabertech/python-izaber-wamp-zerp"
+Download = "https://github.com/zabertech/python-izaber-wamp-zerp/archive/2.8.20240726.tar.gz"
+
+[project.scripts]
+wampcli = "izaber_wamp_zerp.wampcli:run_main"
+
+[tool.pdm]
+build = { includes = ["izaber_wamp_zerp"] }
+
+[tool.pdm.dev-dependencies.test]
+
+pytest = ">=4.6.11"
+nox = ">=2023.4.22"
+
