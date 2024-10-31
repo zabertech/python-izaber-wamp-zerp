@@ -1,0 +1,11 @@
+default:
+  wamp:
+    connection:
+      url: wss://nexus.izaber.com/ws
+      username: username
+      password: password
+
+    zerp:
+        database: sandbox
+
+

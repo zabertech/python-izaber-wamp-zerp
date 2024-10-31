@@ -64,11 +64,13 @@ And now it's possible to make changes to the code
 
 ### Tests via Docker
 
-It's not always desireable to pollute the environment with multiple versions of python so using docker compose is the recommend method for testing. Running the following command will run the tests against pypy3 and from cpython versions 3.8 through 3.13.
+It's not always desireable to pollute the environment with multiple versions of python so using docker compose is the recommend method for testing.
 
-```bash
-docker compose up
-```
+1. Copy the `./volumes/izaber.yaml.tempate` and update with the appropriate permissions to access Nexus
+2. Running the following command will run the tests against pypy3 and from cpython versions 3.8 through 3.13.
+    ```bash
+    docker compose up
+    ```
 
 If you would like to work within the container, have a look at the `docker-compose.yml` and update the `CMD` to `sleep infinity` and it will provide a shell environment (via something like `docker compose exec src bash`) for testing the code within a container.
 
