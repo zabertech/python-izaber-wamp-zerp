@@ -5,7 +5,7 @@ cd /src
 
 # Wait till our nexus server is up and running
 # before attempting any tests
-./docker/wait-for-nexus.sh
+pdm run python ./docker/wait-for-nexus.py
 
 # Then run the nox test scripts
 nox --reuse-existing-virtualenvs $@

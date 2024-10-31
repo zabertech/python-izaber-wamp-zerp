@@ -45,7 +45,7 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
     && curl -L -o /tmp/pypy.tar.bz2 https://downloads.python.org/pypy/pypy3.10-v7.3.17-linux64.tar.bz2 && \
         tar -xjf /tmp/pypy.tar.bz2 -C /opt && \
         rm /tmp/pypy.tar.bz2 && \
-        mv /opt/pypy3.10-v7.3.17-linux64 /opt/pypy3
+        mv /opt/pypy3.10-v7.3.17-linux64 /opt/pypy3 \
     # Pip is handy to have around
     && curl https://bootstrap.pypa.io/get-pip.py -o /root/get-pip.py \
     && python3 /root/get-pip.py \

@@ -4,7 +4,8 @@ services:
       context: .
     # Uncomment this if you wish to "check into" this container
     # and work within an isolated container
-    command: sleep infinity
+    #command: sleep infinity
     volumes:
       - .:/src
       - ./volumes:/volumes
+
