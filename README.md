@@ -73,6 +73,17 @@ docker compose logs -f src
 
 If you would like to work within the container, have a look at the `docker-compose.yml` and update the `CMD` to `sleep infinity` and it will provide a shell environment (via something like `docker compose exec src bash`) for testing the code within a container.
 
+
+### Tests via Docker via Dev-Env
+
+It's not always desireable to pollute the environment with multiple versions of python so using the [dev-env](https://gitlab.izaber.com/devops/dev-env) is the recommended way of performing testing.
+
+1. Clone the dev-env the way you normally would
+2. Ensure that `python-izaber-wamp-zerp` is enabled in the configuration `izaber.yaml`
+3. Running docker compose up should instantiate a container like `XXXX-python-izaber-wamp-zerp-1`
+
+Using the new container will allow testing and verification that the various pythons will function when deployed.
+
 ### Packaging
 
 - Ensure that the `pyproject.toml` has the newest version.

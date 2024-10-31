@@ -7,15 +7,4 @@ services:
     command: sleep infinity
     volumes:
       - .:/src
-      - ./volumes/nexus-test-data:/data
-    depends_on:
-      nexus:
-        condition: service_started
-
-  nexus:
-    image: zaberit/nexus:3.0.20241025
-    environment:
-      RUN_MODE: tester
-    volumes:
-      - ./volumes/nexus-test-data:/data
-
+      - ./volumes:/volumes

@@ -18,7 +18,6 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
             libssl-dev \
             libxml2-dev \
             libxslt1-dev \
-            pypy3-dev \
             python3-distutils \
             python3.7 \
             python3.7-dev \
@@ -42,6 +41,11 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
             python3.13-dev \
             telnet \
             vim-nox \
+    # Install pypy3
+    && curl -L -o /tmp/pypy.tar.bz2 https://downloads.python.org/pypy/pypy3.10-v7.3.17-linux64.tar.bz2 && \
+        tar -xjf /tmp/pypy.tar.bz2 -C /opt && \
+        rm /tmp/pypy.tar.bz2 && \
+        mv /opt/pypy3.10-v7.3.17-linux64 /opt/pypy3
     # Pip is handy to have around
     && curl https://bootstrap.pypa.io/get-pip.py -o /root/get-pip.py \
     && python3 /root/get-pip.py \
@@ -60,11 +64,7 @@ COPY --chown=zaber:zaber . /src
 
 ENV PATH=/home/zaber/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-RUN echo "Installing PDM" \
-    # SETUP Environment
-    && /src/docker/setup-env.sh \
-    ;
-
+RUN /src/docker/setup-env.sh
 
 CMD /src/docker/run-test.sh
 
