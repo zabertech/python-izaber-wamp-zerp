@@ -19,9 +19,6 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
             libxml2-dev \
             libxslt1-dev \
             python3-distutils \
-            python3.7 \
-            python3.7-dev \
-            python3.7-distutils \
             python3.8 \
             python3.8-dev \
             python3.8-venv \
