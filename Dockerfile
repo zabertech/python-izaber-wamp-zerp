@@ -1,4 +1,4 @@
-FROM registry.izaber.com/devops/base-docker-images/ubuntu:20.04
+FROM registry.izaber.com/devops/base-docker-images/ubuntu:24.04
 
 # Make the src directory
 USER root
@@ -18,7 +18,6 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
             libssl-dev \
             libxml2-dev \
             libxslt1-dev \
-            python3-distutils \
             python3.8 \
             python3.8-dev \
             python3.8-venv \
@@ -33,7 +32,7 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
             python3.11-distutils \
             python3.12 \
             python3.12-dev \
-            python3.12-distutils \
+            python3.12-venv \
             python3.13 \
             python3.13-dev \
             telnet \
@@ -43,11 +42,6 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
         tar -xjf /tmp/pypy.tar.bz2 -C /opt && \
         rm /tmp/pypy.tar.bz2 && \
         mv /opt/pypy3.10-v7.3.17-linux64 /opt/pypy3 \
-    # Pip is handy to have around
-    && curl https://bootstrap.pypa.io/get-pip.py -o /root/get-pip.py \
-    && python3 /root/get-pip.py \
-    # Cleanup caches to reduce image size
-    && python3 -m pip cache purge \
     && apt clean \
     && rm -rf ~/.cache \
     && rm -rf /var/lib/apt/lists/*
