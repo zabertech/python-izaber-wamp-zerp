@@ -24,9 +24,11 @@ wampcli = "izaber_wamp_zerp.wampcli:run_main"
 [tool.pdm]
 build = { includes = ["src/izaber_wamp_zerp"] }
 
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
 [tool.pdm.dev-dependencies.test]
-
 pytest = ">=4.6.11"
 nox = ">=2023.4.22"
 
