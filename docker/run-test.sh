@@ -11,5 +11,5 @@ pdm install -d
 pdm run python ./docker/wait-for-nexus.py
 
 # Then run the nox test scripts
-nox --reuse-existing-virtualenvs $@
+pdm run nox --reuse-existing-virtualenvs $@
 

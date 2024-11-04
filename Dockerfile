@@ -46,8 +46,6 @@ RUN apt update ; apt install -y software-properties-common ; add-apt-repository 
     # Pip is handy to have around
     && curl https://bootstrap.pypa.io/get-pip.py -o /root/get-pip.py \
     && python3 /root/get-pip.py \
-    # We also use Nox
-    && python3 -m pip install nox \
     # Cleanup caches to reduce image size
     && python3 -m pip cache purge \
     && apt clean \

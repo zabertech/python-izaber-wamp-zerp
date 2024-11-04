@@ -22,7 +22,8 @@ Download = "https://github.com/zabertech/python-izaber-wamp-zerp/archive/2.8.202
 wampcli = "izaber_wamp_zerp.wampcli:run_main"
 
 [tool.pdm]
-build = { includes = ["izaber_wamp_zerp"] }
+build = { includes = ["src/izaber_wamp_zerp"] }
+
 
 [tool.pdm.dev-dependencies.test]
 
