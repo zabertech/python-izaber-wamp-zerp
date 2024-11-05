@@ -42,3 +42,57 @@ The module reads all of its settings from a globally defined configuration file 
 - [Using izaber-wamp-zerp in python scripts](docs/usage_in_scripts.md)
 - [Running simple commands on the command line using WAMP CLI](docs/wampcli_usage.md)
 - [Generating ZERP types locally on your system](docs/type_generation.md)
+
+
+## Development
+
+For hacking on the code, this requires the following:
+
+- `git`
+- `>=python3.8`
+- [pdm](https://pdm-project.org/en/latest/)
+
+### Setup
+
+```bash
+git clone git@gitlab.izaber.com:systems/izaber-wamp-zerp.git
+cd izaber-wamp-zerp
+pdm install
+```
+
+And now it's possible to make changes to the code
+
+### Tests via Docker
+
+It's not always desireable to pollute the environment with multiple versions of python so using docker compose is the recommend method for testing.
+
+1. Copy the `./volumes/izaber.yaml.tempate` and update with the appropriate permissions to access Nexus
+2. Running the following command will run the tests against pypy3 and from cpython versions 3.8 through 3.13.
+    ```bash
+    docker compose up
+    ```
+
+If you would like to work within the container, have a look at the `docker-compose.yml` and update the `CMD` to `sleep infinity` and it will provide a shell environment (via something like `docker compose exec src bash`) for testing the code within a container.
+
+
+### Tests via Docker via Dev-Env
+
+It's not always desireable to pollute the environment with multiple versions of python so using the [dev-env](https://gitlab.izaber.com/devops/dev-env) is the recommended way of performing testing.
+
+1. Clone the dev-env the way you normally would
+2. Ensure that `python-izaber-wamp-zerp` is enabled in the configuration `izaber.yaml`
+3. Running docker compose up should instantiate a container like `XXXX-python-izaber-wamp-zerp-1`
+
+Using the new container will allow testing and verification that the various pythons will function when deployed.
+
+### Packaging
+
+- Ensure that the `pyproject.toml` has the newest version.
+- Update the `VERSIONS.md` with the changes made into the library
+- Then, assuming access to the pypi account.
+    ```bash
+    pdm build
+    pdm publish
+    ```
+
+
