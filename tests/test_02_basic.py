@@ -4,7 +4,7 @@ from izaber import initialize
 from izaber.wamp.zerp import zerp
 
 def test_connection():
-    initialize('test', environment="live")
+    initialize()
 
     zerp.hello(__file__, author="Aki", version="0.1a", description="testing errors in izaber-wamp-zerp")
 
