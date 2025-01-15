@@ -14,4 +14,4 @@
   - Add type hint support for ZERP models.
 
 2.8.20250115
-  - Add type hint support for ZERP models.
+  - Update type hints with regular expression operators.
