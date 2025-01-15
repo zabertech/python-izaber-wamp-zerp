@@ -42,7 +42,7 @@ For each model, the following methods are available:
     - **Arguments**
         - values - *List of Tuples* - A list of tuples each tuple in the search domain needs to have 3 elements, in the form: `('field_name', 'operator', value)`.
             - field_name - *String* - The name of the field in the model whose values we are trying to search on
-            - operator - *String* - A string with a valid comparison operator like `=`, `!=`, `>`, `>=`, `<`, `<=`, `like`, `ilike`, `in`, `not in`, `child_of`, `~`, `~*`, `!~`, `!~*`
+            - operator - *String* - A string with a valid comparison operator like `=`, `!=`, `<=`, `<`, `>`, `>=`, `=?`, `in`, `not in`, `child_of`, `=like`, `=ilike`, `like`, `not like`, `ilike`, `not ilike`, `~`, `~*`, `!~`, `!~*`
             - value - A valid value to compare the fields values with in the model. Can be any basic variable type like string, int, float, etc. `~`, `~*`, `!~`, `!~*` operators are for regular expressions (see postgres operator documentation).
     - **Returns**
         - A list of ids for each model item that matched the search terms
