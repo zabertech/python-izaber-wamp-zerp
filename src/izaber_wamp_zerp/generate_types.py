@@ -91,8 +91,10 @@ DOMAIN_OPERATORS = [
     "in",
     "not in",
     "child_of",
-    "parent_left",
-    "parent_right",
+    "~",
+    "~*",
+    "!~",
+    "!~*",
 ]
 
 SET_OPERATIONS = ["&", "|", "!"]
