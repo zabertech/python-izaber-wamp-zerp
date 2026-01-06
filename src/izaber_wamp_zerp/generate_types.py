@@ -53,6 +53,7 @@ Z2P_TYPES = {
     "string": "str",
     "int": "int",
     "url": "str",
+    "jsonb": "dict[str, Any] | list[Any] | str | int | float | bool | None"
 }
 
 
