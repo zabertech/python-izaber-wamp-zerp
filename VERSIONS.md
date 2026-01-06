@@ -15,3 +15,6 @@
 
 2.8.20250115
   - Update type hints with regular expression operators.
+
+2.9.20260105
+  - Add support for 'jsonb' fields to the type generation script.
