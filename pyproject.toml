@@ -16,7 +16,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/zabertech/python-izaber-wamp-zerp"
-Download = "https://github.com/zabertech/python-izaber-wamp-zerp/archive/2.8.20240726.tar.gz"
+Download = "https://github.com/zabertech/python-izaber-wamp-zerp/archive/2.9.20260105.tar.gz"
 
 [project.scripts]
 wampcli = "izaber_wamp_zerp.wampcli:run_main"
